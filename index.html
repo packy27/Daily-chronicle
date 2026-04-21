@@ -1,0 +1,1798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Chronicle of Days</title>
+<link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@400,500,700,800,900&f[]=satoshi@400,500,700&display=swap" rel="stylesheet"/>
+<style>
+/* ── Design Tokens ───────────────────────────────────────────── */
+:root {
+  --bg-base:     #0d0f14;
+  --bg-surface:  #13161e;
+  --bg-card:     #181c26;
+  --bg-hover:    #1e2330;
+  --border:      #252a38;
+  --border-hi:   #2e3548;
+
+  --amber:       #f0a832;
+  --amber-dim:   #a07020;
+  --amber-glow:  #f0a83233;
+  --teal:        #2ec4b6;
+  --teal-dim:    #1e8a80;
+  --rose:        #e05252;
+  --rose-dim:    #903535;
+  --green:       #4caf80;
+  --green-dim:   #2e6e50;
+  --purple:      #9b72cf;
+  --purple-dim:  #5e4080;
+  --sky:         #5aa8d8;
+  --sky-dim:     #346080;
+  --orange:      #e07830;
+  --orange-dim:  #8a4a18;
+
+  --text-bright: #f0f2f8;
+  --text-mid:    #a8b0c8;
+  --text-dim:    #5a6080;
+  --text-muted:  #3a4060;
+
+  --font-display: 'Cabinet Grotesk', system-ui, sans-serif;
+  --font-body:    'Satoshi', system-ui, sans-serif;
+
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-base);
+  color: var(--text-mid);
+  font-size: 13px;
+  line-height: 1.5;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Layout ──────────────────────────────────────────────────── */
+#app { display: flex; flex-direction: column; height: 100vh; }
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 18px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.logo {
+  display: flex; align-items: center; gap: 9px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 17px;
+  color: var(--text-bright);
+  letter-spacing: -0.3px;
+}
+.logo svg { color: var(--amber); }
+
+.header-meta { display: flex; align-items: center; gap: 14px; }
+.age-chip {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+  color: var(--text-dim); text-transform: uppercase;
+}
+.age-val { color: var(--amber); }
+
+#main-grid {
+  display: grid;
+  grid-template-columns: 224px 1fr 272px;
+  gap: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.panel {
+  display: flex; flex-direction: column;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.panel:last-child { border-right: none; }
+
+.panel-title {
+  padding: 11px 14px 9px;
+  font-family: var(--font-display);
+  font-weight: 700; font-size: 11px;
+  letter-spacing: 1px; text-transform: uppercase;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* ── Cards & Sections ────────────────────────────────────────── */
+.section { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.section:last-child { border-bottom: none; }
+
+.section-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--text-muted);
+  margin-bottom: 7px;
+}
+
+/* ── Stat Rows ───────────────────────────────────────────────── */
+.stat-row {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.stat-row:last-child { margin-bottom: 0; }
+
+.stat-label { font-size: 12px; color: var(--text-mid); display: flex; align-items: center; gap: 5px; }
+.stat-icon { font-size: 11px; }
+.stat-val {
+  font-size: 12px; font-weight: 700;
+  color: var(--text-bright); font-variant-numeric: tabular-nums;
+}
+.stat-val.amber  { color: var(--amber); }
+.stat-val.teal   { color: var(--teal); }
+.stat-val.green  { color: var(--green); }
+.stat-val.rose   { color: var(--rose); }
+.stat-val.purple { color: var(--purple); }
+.stat-val.sky    { color: var(--sky); }
+
+/* ── Bar ─────────────────────────────────────────────────────── */
+.bar-wrap { margin-bottom: 7px; }
+.bar-wrap:last-child { margin-bottom: 0; }
+.bar-header { display: flex; justify-content: space-between; margin-bottom: 3px; }
+.bar-name { font-size: 12px; color: var(--text-mid); }
+.bar-nums { font-size: 11px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.bar-track {
+  height: 5px; background: var(--bg-base);
+  border-radius: 999px; overflow: hidden;
+}
+.bar-fill {
+  height: 100%; border-radius: 999px;
+  transition: width 0.25s ease;
+}
+.bar-fill.amber  { background: var(--amber); }
+.bar-fill.teal   { background: var(--teal); }
+.bar-fill.energy { background: linear-gradient(90deg, var(--teal), var(--sky)); }
+.bar-fill.happy  { background: linear-gradient(90deg, var(--green), var(--amber)); }
+.bar-fill.str    { background: var(--rose); }
+.bar-fill.dex    { background: var(--sky); }
+.bar-fill.con    { background: var(--green); }
+.bar-fill.int    { background: var(--purple); }
+.bar-fill.wis    { background: var(--amber); }
+.bar-fill.cha    { background: var(--teal); }
+
+/* ── Stat effect hint ────────────────────────────────────────── */
+.stat-effect {
+  font-size: 10px; color: var(--text-muted); margin-top: 1px;
+  padding-left: 2px;
+  line-height: 1.35;
+}
+
+/* ── Activity Cards ──────────────────────────────────────────── */
+.activity-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 11px 13px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.activity-card:last-child { margin-bottom: 0; }
+.activity-card:hover { border-color: var(--border-hi); background: var(--bg-hover); }
+.activity-card.active {
+  border-color: var(--amber-dim);
+  background: #1a1600;
+}
+.activity-card.active.teal-act { border-color: var(--teal-dim); background: #001614; }
+.activity-card.active.rose-act { border-color: var(--rose-dim); background: #160000; }
+.activity-card.active.green-act { border-color: var(--green-dim); background: #001009; }
+
+.act-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+.act-name { font-weight: 700; font-size: 13px; color: var(--text-bright); }
+.act-cost { font-size: 11px; color: var(--text-dim); }
+.act-desc { font-size: 11px; color: var(--text-dim); margin-bottom: 5px; line-height: 1.4; }
+.act-progress {
+  height: 4px; background: var(--bg-base);
+  border-radius: 999px; overflow: hidden;
+}
+.act-progress-fill {
+  height: 100%; border-radius: 999px;
+  background: var(--amber);
+  transition: width 0.1s linear;
+}
+.act-progress-fill.teal { background: var(--teal); }
+.act-progress-fill.rose { background: var(--rose); }
+.act-progress-fill.green { background: var(--green); }
+
+/* ── Job / Skill Cards ───────────────────────────────────────── */
+.tab-bar {
+  display: flex; gap: 0;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.tab-btn {
+  flex: 1;
+  padding: 9px 4px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.6px;
+  text-transform: uppercase; text-align: center;
+  color: var(--text-muted); cursor: pointer;
+  border: none; background: none;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+.tab-btn.active { color: var(--amber); border-bottom-color: var(--amber); }
+
+.tab-content { display: none; flex: 1; overflow-y: auto; }
+.tab-content.visible { display: block; }
+
+.job-card {
+  margin: 8px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.job-card.locked { opacity: 0.5; cursor: not-allowed; }
+.job-card.active { border-color: var(--amber-dim); background: #1a1600; }
+.job-card:not(.locked):hover { border-color: var(--border-hi); background: var(--bg-hover); }
+
+.job-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3px; }
+.job-name { font-weight: 700; font-size: 12px; color: var(--text-bright); }
+.job-pay { font-size: 11px; color: var(--green); font-weight: 700; }
+.job-desc { font-size: 11px; color: var(--text-dim); margin-bottom: 5px; line-height: 1.4; }
+.job-req  { font-size: 10px; color: var(--text-muted); }
+.job-req.met { color: var(--green-dim); }
+.job-stats { font-size: 10px; color: var(--purple-dim); margin-top: 3px; }
+
+.cat-header {
+  padding: 7px 10px 3px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--text-muted);
+}
+
+/* ── Housing Cards ───────────────────────────────────────────── */
+.housing-card {
+  margin: 8px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.housing-card.current { border-color: var(--teal-dim); background: #001614; cursor: default; }
+.housing-card.locked { opacity: 0.45; cursor: not-allowed; }
+.housing-card:not(.current):not(.locked):hover { border-color: var(--border-hi); background: var(--bg-hover); }
+
+.housing-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3px; }
+.housing-name { font-weight: 700; font-size: 12px; color: var(--text-bright); display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.housing-tier { font-size: 9px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+  padding: 2px 5px; border-radius: 3px;
+  background: var(--bg-base); color: var(--text-muted); }
+.housing-tier.current { background: var(--teal-dim); color: var(--text-bright); }
+.housing-cost { font-size: 11px; color: var(--amber); font-weight: 700; }
+.housing-cost.free { color: var(--text-muted); }
+.housing-desc { font-size: 11px; color: var(--text-dim); margin-bottom: 5px; line-height: 1.4; }
+.housing-bonuses { display: flex; flex-wrap: wrap; gap: 4px; }
+.housing-bonus-pill {
+  font-size: 10px; padding: 1px 6px; border-radius: 999px;
+  background: var(--bg-base); color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+.housing-bonus-pill.pos { color: var(--green); border-color: var(--green-dim); }
+.housing-bonus-pill.neg { color: var(--rose); border-color: var(--rose-dim); }
+
+/* ── Equipment Cards ─────────────────────────────────────────── */
+.equip-card {
+  margin: 8px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.equip-card.owned { border-color: var(--orange-dim); background: #120c00; }
+.equip-card.equipped-active { border-color: var(--orange); background: #1a1000; }
+.equip-card.locked-eq { opacity: 0.45; cursor: not-allowed; }
+.equip-card:not(.locked-eq):not(.owned):hover { border-color: var(--border-hi); background: var(--bg-hover); }
+
+.equip-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3px; }
+.equip-name { font-weight: 700; font-size: 12px; color: var(--text-bright); display: flex; align-items: center; gap: 5px; }
+.equip-badge {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
+  padding: 2px 5px; border-radius: 3px;
+}
+.equip-badge.owned-badge { background: var(--orange-dim); color: #ffd090; }
+.equip-badge.equipped-badge { background: var(--orange); color: #1a0800; }
+.equip-cost { font-size: 11px; color: var(--amber); font-weight: 700; }
+.equip-desc { font-size: 11px; color: var(--text-dim); margin-bottom: 5px; line-height: 1.4; }
+.equip-bonuses { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 4px; }
+.equip-pill {
+  font-size: 10px; padding: 1px 6px; border-radius: 999px;
+  background: var(--bg-base); border: 1px solid var(--border);
+}
+.equip-pill.pos { color: var(--green); border-color: var(--green-dim); }
+.equip-pill.neg { color: var(--rose); border-color: var(--rose-dim); }
+.equip-pill.neutral { color: var(--sky); border-color: var(--sky-dim); }
+.equip-actions { display: flex; gap: 6px; margin-top: 6px; }
+.equip-btn {
+  flex: 1; padding: 5px 8px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-hi);
+  background: var(--bg-base);
+  color: var(--text-mid);
+  font-family: var(--font-body);
+  font-size: 11px; font-weight: 700; cursor: pointer;
+  transition: all 0.15s;
+}
+.equip-btn:hover { background: var(--bg-hover); color: var(--text-bright); }
+.equip-btn.buy-btn { border-color: var(--amber-dim); color: var(--amber); }
+.equip-btn.buy-btn:hover { background: #1a1000; }
+.equip-btn.equip-btn-act { border-color: var(--orange-dim); color: var(--orange); }
+.equip-btn.equip-btn-act:hover { background: var(--bg-hover); }
+.equip-btn.unequip-btn { border-color: var(--rose-dim); color: var(--rose); font-size: 10px; }
+.equip-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* Equipment summary pills in left panel */
+.eq-summary { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 5px; }
+.eq-pill-small {
+  font-size: 10px; padding: 1px 6px; border-radius: 999px;
+  background: var(--bg-base); border: 1px solid var(--orange-dim);
+  color: #ffc070;
+}
+
+/* ── Info Box / Tooltip ──────────────────────────────────────── */
+.info-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r-sm);
+  padding: 8px 10px;
+  margin: 8px 10px 0;
+  font-size: 11px; color: var(--text-dim); line-height: 1.5;
+}
+.info-box strong { color: var(--text-mid); }
+
+/* ── Message Log ─────────────────────────────────────────────── */
+#log-wrap {
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border);
+  padding: 6px 14px;
+  height: 52px; min-height: 52px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.log-entry { font-size: 11px; color: var(--text-dim); padding: 1px 0; }
+.log-entry.new { color: var(--amber); }
+
+/* ── Prestige Button ─────────────────────────────────────────── */
+.prestige-wrap { padding: 12px 10px; }
+.btn {
+  width: 100%; padding: 9px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-hi);
+  background: var(--bg-base);
+  color: var(--text-mid);
+  font-family: var(--font-body);
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  transition: all 0.15s;
+}
+.btn:hover { background: var(--bg-hover); color: var(--text-bright); }
+.btn.primary { border-color: var(--amber-dim); color: var(--amber); background: var(--amber-glow); }
+.btn.primary:hover { background: #2a1a00; }
+.btn.danger { border-color: var(--rose-dim); color: var(--rose); }
+.btn.danger:hover { background: #1a0000; }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ── Prestige indicator ──────────────────────────────────────── */
+.prestige-badge {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+  padding: 2px 8px; border-radius: 999px;
+  background: var(--amber-glow); color: var(--amber);
+  border: 1px solid var(--amber-dim);
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── Intro Modal ─────────────────────────────────────────────── */
+#intro-modal {
+  position: fixed; inset: 0;
+  background: #000a;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+}
+.modal-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r-lg);
+  padding: 28px 32px;
+  max-width: 420px; width: 90%;
+}
+.modal-title {
+  font-family: var(--font-display);
+  font-weight: 800; font-size: 22px;
+  color: var(--text-bright); margin-bottom: 14px;
+}
+.modal-title span { color: var(--amber); }
+.modal-body { color: var(--text-mid); font-size: 13px; line-height: 1.65; margin-bottom: 18px; }
+.modal-meta { font-size: 11px; color: var(--text-muted); margin-bottom: 20px; }
+
+/* ── Energy & Happiness panel items ────────────────────────────── */
+.vital-section { padding: 10px 12px; }
+.vital-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+.vital-name { font-size: 11px; color: var(--text-mid); }
+.vital-val { font-size: 11px; font-weight: 700; color: var(--text-bright); font-variant-numeric: tabular-nums; }
+.vital-track { height: 8px; background: var(--bg-base); border-radius: 999px; overflow: hidden; margin-bottom: 4px; }
+.vital-fill { height: 100%; border-radius: 999px; transition: width 0.25s ease; }
+.vital-fill.energy { background: linear-gradient(90deg, var(--teal), var(--sky)); }
+.vital-fill.happy  { background: linear-gradient(90deg, var(--green), var(--amber)); }
+.vital-fill.happy.low { background: linear-gradient(90deg, var(--rose), var(--orange)); }
+.vital-detail { font-size: 10px; color: var(--text-muted); line-height: 1.4; }
+
+/* Colors for stat classes */
+.c-str { color: var(--rose); }
+.c-dex { color: var(--sky); }
+.c-con { color: var(--green); }
+.c-int { color: var(--purple); }
+.c-wis { color: var(--amber); }
+.c-cha { color: var(--teal); }
+
+/* Maintenance cost warning line */
+.upkeep-line {
+  font-size: 10px; color: var(--text-muted);
+  margin-top: 4px; padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+.upkeep-total { color: var(--rose); font-weight: 700; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="logo">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-label="Chronicle of Days logo">
+        <circle cx="11" cy="11" r="9" stroke="currentColor" stroke-width="1.5"/>
+        <circle cx="11" cy="11" r="3.5" fill="currentColor" opacity="0.3"/>
+        <line x1="11" y1="2" x2="11" y2="5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="11" y1="17" x2="11" y2="20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="2" y1="11" x2="5" y2="11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="17" y1="11" x2="20" y2="11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="11" y1="11" x2="14.5" y2="7.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+      Chronicle of Days
+    </div>
+    <div class="header-meta">
+      <span class="age-chip">Age <span class="age-val" id="hdr-age">18</span></span>
+      <span class="age-chip">Day <span class="age-val" id="hdr-day">1</span></span>
+      <span class="age-chip" id="hdr-upkeep" style="color:var(--rose); display:none;"></span>
+      <span class="prestige-badge" id="prestige-badge" style="display:none"></span>
+    </div>
+  </header>
+
+  <div id="main-grid">
+    <!-- LEFT: Stats Panel -->
+    <div class="panel" id="left-panel">
+      <div class="panel-title">Character</div>
+
+      <!-- Money & Time -->
+      <div class="section">
+        <div class="section-label">Resources</div>
+        <div class="stat-row">
+          <span class="stat-label"><span class="stat-icon">💰</span> Money</span>
+          <span class="stat-val amber" id="stat-money">$0.00</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label"><span class="stat-icon">🎂</span> Age</span>
+          <span class="stat-val" id="stat-age">18.0</span>
+        </div>
+        <!-- Daily upkeep summary -->
+        <div class="upkeep-line" id="upkeep-summary" style="display:none;">
+          Upkeep: <span class="upkeep-total" id="upkeep-total-val">$0/day</span>
+        </div>
+      </div>
+
+      <!-- Vitals: Energy & Happiness -->
+      <div class="section">
+        <div class="section-label">Vitals</div>
+
+        <div class="vital-section" style="padding:0 0 8px 0;">
+          <div class="vital-label">
+            <span class="vital-name">⚡ Energy</span>
+            <span class="vital-val" id="energy-val">100/100</span>
+          </div>
+          <div class="vital-track"><div class="vital-fill energy" id="energy-bar" style="width:100%"></div></div>
+          <div class="vital-detail" id="energy-detail">Regen: +0.0/tick · Max: 100</div>
+        </div>
+
+        <div class="vital-section" style="padding:0;">
+          <div class="vital-label">
+            <span class="vital-name">😊 Happiness</span>
+            <span class="vital-val" id="happy-val">50/100</span>
+          </div>
+          <div class="vital-track"><div class="vital-fill happy" id="happy-bar" style="width:50%"></div></div>
+          <div class="vital-detail" id="happy-detail">Affects earnings &amp; energy regen</div>
+        </div>
+      </div>
+
+      <!-- Housing Status -->
+      <div class="section">
+        <div class="section-label">Housing</div>
+        <div class="stat-row">
+          <span class="stat-label"><span class="stat-icon" id="housing-icon">🏚️</span> <span id="housing-name">Homeless</span></span>
+          <span class="stat-val teal" id="housing-tier-label">Tier 0</span>
+        </div>
+        <div id="housing-bonuses-inline" style="margin-top:4px; display:flex; flex-wrap:wrap; gap:3px;"></div>
+      </div>
+
+      <!-- Equipment Summary -->
+      <div class="section" id="equip-summary-section" style="display:none;">
+        <div class="section-label">Equipment</div>
+        <div class="eq-summary" id="equip-summary-pills"></div>
+        <div class="vital-detail" id="equip-effect-summary" style="margin-top:5px;"></div>
+      </div>
+
+      <!-- RPG Stats — each shows its gameplay effect -->
+      <div class="section">
+        <div class="section-label">RPG Stats</div>
+
+        <div class="bar-wrap">
+          <div class="bar-header"><span class="bar-name c-str">⚔ Strength</span><span class="bar-nums" id="str-nums">0/100</span></div>
+          <div class="bar-track"><div class="bar-fill str" id="str-bar" style="width:0%"></div></div>
+          <div class="stat-effect c-str" id="str-effect">↑ Physical job earnings</div>
+        </div>
+        <div class="bar-wrap">
+          <div class="bar-header"><span class="bar-name c-dex">🎯 Dexterity</span><span class="bar-nums" id="dex-nums">0/100</span></div>
+          <div class="bar-track"><div class="bar-fill dex" id="dex-bar" style="width:0%"></div></div>
+          <div class="stat-effect c-dex" id="dex-effect">↑ Action speed</div>
+        </div>
+        <div class="bar-wrap">
+          <div class="bar-header"><span class="bar-name c-con">🛡 Constitution</span><span class="bar-nums" id="con-nums">0/100</span></div>
+          <div class="bar-track"><div class="bar-fill con" id="con-bar" style="width:0%"></div></div>
+          <div class="stat-effect c-con" id="con-effect">↑ Max energy &amp; regen rate</div>
+        </div>
+        <div class="bar-wrap">
+          <div class="bar-header"><span class="bar-name c-int">📚 Intelligence</span><span class="bar-nums" id="int-nums">0/100</span></div>
+          <div class="bar-track"><div class="bar-fill int" id="int-bar" style="width:0%"></div></div>
+          <div class="stat-effect c-int" id="int-effect">↑ Training &amp; study XP rate</div>
+        </div>
+        <div class="bar-wrap">
+          <div class="bar-header"><span class="bar-name c-wis">🔮 Wisdom</span><span class="bar-nums" id="wis-nums">0/100</span></div>
+          <div class="bar-track"><div class="bar-fill wis" id="wis-bar" style="width:0%"></div></div>
+          <div class="stat-effect c-wis" id="wis-effect">↓ Happiness decay rate</div>
+        </div>
+        <div class="bar-wrap">
+          <div class="bar-header"><span class="bar-name c-cha">💬 Charisma</span><span class="bar-nums" id="cha-nums">0/100</span></div>
+          <div class="bar-track"><div class="bar-fill cha" id="cha-bar" style="width:0%"></div></div>
+          <div class="stat-effect c-cha" id="cha-effect">↑ Trade &amp; social job earnings</div>
+        </div>
+      </div>
+
+      <!-- Prestige -->
+      <div class="section">
+        <div class="section-label">Legacy</div>
+        <div class="stat-row">
+          <span class="stat-label">Prestige Count</span>
+          <span class="stat-val amber" id="prestige-count">0</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Legacy Bonus</span>
+          <span class="stat-val green" id="legacy-bonus">×1.00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER: Activities Panel -->
+    <div class="panel" style="border-left:1px solid var(--border); background: var(--bg-base);">
+      <div class="panel-title">Activities</div>
+
+      <div style="padding:10px 12px;">
+        <!-- System summary info box -->
+        <div class="info-box" style="margin:0 0 10px 0;" id="energy-info-box">
+          <strong>Stats at a glance</strong> — STR boosts physical pay · CHA boosts trade pay · DEX speeds actions · CON raises max energy &amp; regen · INT multiplies XP gains · WIS slows happiness decay
+        </div>
+
+        <div class="section-label" style="margin-bottom:8px;">Work</div>
+        <div id="work-activities"></div>
+
+        <div class="section-label" style="margin:10px 0 8px;">Train</div>
+        <div id="train-activities"></div>
+
+        <div class="section-label" style="margin:10px 0 8px;">Rest</div>
+        <div id="rest-activities"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Jobs / Skills / Housing / Equipment / Prestige tabs -->
+    <div class="panel">
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('jobs')">Jobs</button>
+        <button class="tab-btn" onclick="switchTab('skills')">Train</button>
+        <button class="tab-btn" onclick="switchTab('housing')">Housing</button>
+        <button class="tab-btn" onclick="switchTab('equipment')">Gear</button>
+        <button class="tab-btn" onclick="switchTab('prestige')">Legacy</button>
+      </div>
+
+      <!-- Jobs Tab -->
+      <div class="tab-content visible" id="tab-jobs">
+        <div id="jobs-list"></div>
+      </div>
+
+      <!-- Skills Tab -->
+      <div class="tab-content" id="tab-skills">
+        <div id="skills-list"></div>
+      </div>
+
+      <!-- Housing Tab -->
+      <div class="tab-content" id="tab-housing">
+        <div class="info-box">
+          <strong>Housing</strong> affects energy regeneration and happiness baseline. Better housing is a long-term investment — but watch the daily upkeep.
+        </div>
+        <div id="housing-list"></div>
+      </div>
+
+      <!-- Equipment Tab -->
+      <div class="tab-content" id="tab-equipment">
+        <div class="info-box">
+          <strong>Equipment</strong> provides permanent bonuses while owned. Each item has a one-time purchase cost and a daily maintenance fee. Equip items to activate their effects.
+        </div>
+        <div id="equipment-list"></div>
+      </div>
+
+      <!-- Prestige Tab -->
+      <div class="tab-content" id="tab-prestige">
+        <div class="prestige-wrap">
+          <div class="info-box" style="margin:0 0 12px 0;" id="prestige-info">
+            <strong>Prestige</strong> — Reset your progress in exchange for a permanent legacy bonus that multiplies all earnings and stat gain. Available at age 65.
+          </div>
+          <div class="stat-row" style="margin-bottom:8px;">
+            <span class="stat-label">Next bonus</span>
+            <span class="stat-val green" id="prestige-next-bonus">×1.10</span>
+          </div>
+          <button class="btn primary" id="prestige-btn" onclick="doPrestige()" disabled>Prestige (age 65+)</button>
+          <div style="margin-top:10px;">
+            <button class="btn danger" onclick="hardReset()" style="font-size:11px; padding:7px;">Reset All Progress</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="log-wrap">
+    <div id="log"></div>
+  </div>
+</div>
+
+<!-- Intro Modal -->
+<div id="intro-modal" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-title">Chronicle of <span>Days</span></div>
+    <div class="modal-body">
+      You are 18 years old with nothing to your name — no home, no savings, no trade.<br><br>
+      Every day is a choice: <strong>work</strong> to earn money, <strong>train</strong> to grow stronger, <strong>study</strong> to grow wiser. Find a job. Improve your living conditions. Build a life worth carrying into the next generation.
+    </div>
+    <div class="modal-meta">
+      💡 <strong>Stats shape your world:</strong> STR &amp; CHA boost job pay · DEX speeds actions · CON raises max energy · INT multiplies XP · WIS slows happiness decay. Manage happiness — it affects earnings and regen.
+    </div>
+    <button class="btn primary" onclick="closeIntro()">Begin Your Chronicle</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════════════════
+const TICK_MS       = 150;   // real ms per tick
+const TICKS_PER_DAY = 80;    // game ticks per in-game day
+const DAYS_PER_YEAR = 365;
+
+// Energy
+const ENERGY_BASE_MAX          = 100;
+const ENERGY_CON_BONUS_PER_PT  = 1.5;  // +1.5 max energy per CON point
+const ENERGY_CON_REGEN_PER_PT  = 0.006; // CON also improves regen rate
+const ENERGY_DRAIN_BASE        = 1.0;   // per activity tick
+
+// DEX speed bonus: reduces cycle length (faster bar fills)
+// At DEX 50 → 20% faster; DEX 100 → 33% faster
+const DEX_SPEED_PER_PT = 0.004;  // fraction per point (capped at 0.4)
+
+// INT XP multiplier: adds % bonus to all stat XP gains
+const INT_XP_PER_PT = 0.008;    // +0.8% per INT point (capped at +60%)
+
+// WIS happiness decay reduction
+const WIS_HAPPY_DECAY_PER_PT = 0.01; // each WIS pt reduces decay by 1% (capped at 60%)
+
+// STR earnings bonus for physical jobs (Labor/Military)
+const STR_PAY_PER_PT = 0.008;   // +0.8% per STR point (capped at +60%)
+
+// CHA earnings bonus for trade/social jobs (Trade/Knowledge)
+const CHA_PAY_PER_PT = 0.009;   // +0.9% per CHA point (capped at +70%)
+
+// Happiness
+const HAPPY_REST_RATE      = 0.15;  // base happiness per tick at rest
+const HAPPY_WORK_DRAIN     = 0.06;  // happiness lost per work tick
+const HAPPY_TRAIN_DRAIN    = 0.04;  // happiness lost per train tick
+const HAPPY_IDLE_DRIFT     = 0.015; // passive drift toward housing baseline
+const HAPPY_MIN_FLOOR      = 5;
+const HAPPY_WIS_REGEN_BONUS = 0.001; // small passive happy regen from WIS per tick when resting
+
+// Prestige
+const PRESTIGE_MIN_AGE = 65;
+const PRESTIGE_BONUS_PER_COUNT = 0.10;
+
+// Passive stat XP per tick while working
+const JOB_STAT_RATE = 0.018;
+
+// ═══════════════════════════════════════════════════════════════
+// HOUSING DATA  (5 tiers: 0=homeless, 1=rough shelter, 2=shared room, 3=small home, 4=comfortable home)
+// ═══════════════════════════════════════════════════════════════
+const HOUSING = [
+  {
+    id: 'homeless',
+    name: 'Homeless',
+    icon: '🏚️',
+    tier: 0,
+    cost: 0,
+    upkeepPerDay: 0,
+    desc: 'Sleeping rough. No shelter, no comfort. Energy recovers very slowly; happiness constantly erodes.',
+    energyRegenBonus: 0,
+    happyBaseline: 15,     // housing pulls happiness toward this floor
+    happyDecayBonus: 0.03, // extra happiness drain per tick (poor housing makes things worse)
+    happyTickBonus: 0,
+    bonuses: [
+      { label: 'Very slow regen', type: 'neg' },
+      { label: 'Happiness −−', type: 'neg' },
+    ]
+  },
+  {
+    id: 'rough_shelter',
+    name: 'Rough Shelter',
+    icon: '⛺',
+    tier: 1,
+    cost: 80,
+    upkeepPerDay: 0.5,
+    desc: 'An abandoned barn or rough lean-to. Not comfortable, but it keeps the rain off and halts the worst of the decay.',
+    energyRegenBonus: 0.15,
+    happyBaseline: 28,
+    happyDecayBonus: 0,    // no extra drain — decay stops at housing floor
+    happyTickBonus: 0.01,
+    bonuses: [
+      { label: '+15% regen', type: 'pos' },
+      { label: 'Stops happiness drain', type: 'pos' },
+      { label: '$0.50/day', type: 'neg' },
+    ]
+  },
+  {
+    id: 'shared_room',
+    name: 'Shared Room',
+    icon: '🛏️',
+    tier: 2,
+    cost: 300,
+    upkeepPerDay: 2,
+    desc: 'A rented bunk in a shared space. Basic shelter. Life is tough but manageable.',
+    energyRegenBonus: 0.35,
+    happyBaseline: 42,
+    happyDecayBonus: 0,
+    happyTickBonus: 0.03,
+    bonuses: [
+      { label: '+35% regen', type: 'pos' },
+      { label: 'Happiness ↑', type: 'pos' },
+      { label: '$2/day', type: 'neg' },
+    ]
+  },
+  {
+    id: 'small_home',
+    name: 'Small Home',
+    icon: '🏠',
+    tier: 3,
+    cost: 2000,
+    upkeepPerDay: 8,
+    desc: 'A modest place to call your own. Privacy, stability, and room to breathe.',
+    energyRegenBonus: 0.80,
+    happyBaseline: 65,
+    happyDecayBonus: 0,
+    happyTickBonus: 0.08,
+    bonuses: [
+      { label: '+80% regen', type: 'pos' },
+      { label: 'Happiness ↑↑', type: 'pos' },
+      { label: '$8/day', type: 'neg' },
+    ]
+  },
+  {
+    id: 'comfortable_home',
+    name: 'Comfortable Home',
+    icon: '🏡',
+    tier: 4,
+    cost: 8000,
+    upkeepPerDay: 20,
+    desc: 'A comfortable, well-furnished home. Rest here and you\'ll wake up ready for anything.',
+    energyRegenBonus: 1.6,
+    happyBaseline: 85,
+    happyDecayBonus: 0,
+    happyTickBonus: 0.18,
+    bonuses: [
+      { label: '+160% regen', type: 'pos' },
+      { label: 'Happiness ↑↑↑', type: 'pos' },
+      { label: '$20/day', type: 'neg' },
+    ]
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// EQUIPMENT DATA
+// ═══════════════════════════════════════════════════════════════
+// Effects: stat bonuses added while equipped (flat additions to stat values for calc purposes)
+// jobCategory: if set, earnings bonus only applies to that category; else global
+const EQUIPMENT = [
+  {
+    id: 'work_gloves',
+    name: 'Work Gloves',
+    icon: '🧤',
+    desc: 'Sturdy leather gloves. Protect your hands and improve grip during labor.',
+    cost: 50,
+    maintenancePerDay: 0.25,
+    requires: {},
+    // Bonus: +15% earnings from Labor jobs
+    earningsBonus: { category: 'Labor', pct: 0.15 },
+    statBonus: {},
+    xpBonus: 0,
+    energyDrainReduction: 0,
+    pills: [
+      { label: '+15% Labor pay', type: 'pos' },
+      { label: '$0.25/day upkeep', type: 'neg' },
+    ],
+    jobCategoryReq: null,
+  },
+  {
+    id: 'training_weights',
+    name: 'Training Weights',
+    icon: '🏋️',
+    desc: 'Heavy iron weights for resistance training. Accelerates physical stat gains.',
+    cost: 120,
+    maintenancePerDay: 0.5,
+    requires: {},
+    earningsBonus: null,
+    statBonus: {},
+    xpBonus: 0.20,          // +20% XP to STR and CON training
+    xpStats: ['str','con'],  // which stats get the bonus
+    energyDrainReduction: 0,
+    pills: [
+      { label: '+20% STR/CON XP', type: 'pos' },
+      { label: '$0.50/day upkeep', type: 'neg' },
+    ],
+    jobCategoryReq: null,
+  },
+  {
+    id: 'study_lamp',
+    name: 'Scholar\'s Lamp',
+    icon: '🪔',
+    desc: 'A bright oil lamp for late-night studying. Enhances all mental training.',
+    cost: 80,
+    maintenancePerDay: 0.3,
+    requires: { int: 5 },
+    earningsBonus: null,
+    statBonus: {},
+    xpBonus: 0.25,
+    xpStats: ['int','wis','cha'],
+    energyDrainReduction: 0,
+    pills: [
+      { label: '+25% INT/WIS/CHA XP', type: 'pos' },
+      { label: '$0.30/day upkeep', type: 'neg' },
+    ],
+    jobCategoryReq: null,
+  },
+  {
+    id: 'travelers_boots',
+    name: "Traveler's Boots",
+    icon: '👢',
+    desc: 'Well-crafted boots that reduce fatigue on long journeys. Slightly cut energy drain.',
+    cost: 180,
+    maintenancePerDay: 0.75,
+    requires: { dex: 10 },
+    earningsBonus: null,
+    statBonus: {},
+    xpBonus: 0,
+    energyDrainReduction: 0.12, // 12% less energy drain on all active tasks
+    pills: [
+      { label: '−12% energy drain', type: 'pos' },
+      { label: '$0.75/day upkeep', type: 'neg' },
+    ],
+    jobCategoryReq: null,
+  },
+  {
+    id: 'merchants_ledger',
+    name: "Merchant's Ledger",
+    icon: '📒',
+    desc: 'A well-organized ledger system. Boosts earnings from trade and knowledge work.',
+    cost: 250,
+    maintenancePerDay: 1.0,
+    requires: { cha: 15, int: 10 },
+    earningsBonus: { category: 'Trade', pct: 0.20 },
+    earningsBonusB: { category: 'Knowledge', pct: 0.10 },
+    statBonus: {},
+    xpBonus: 0,
+    energyDrainReduction: 0,
+    pills: [
+      { label: '+20% Trade pay', type: 'pos' },
+      { label: '+10% Knowledge pay', type: 'pos' },
+      { label: '$1.00/day upkeep', type: 'neg' },
+    ],
+    jobCategoryReq: null,
+  },
+  {
+    id: 'iron_sword',
+    name: 'Iron Sword',
+    icon: '⚔️',
+    desc: 'A serviceable military blade. Required for advanced military positions and boosts military pay.',
+    cost: 400,
+    maintenancePerDay: 2.0,
+    requires: { str: 20 },
+    earningsBonus: { category: 'Military', pct: 0.25 },
+    statBonus: {},
+    xpBonus: 0,
+    energyDrainReduction: 0,
+    unlocksJobCategory: 'Military',  // flavor note — officer tier prefers this
+    pills: [
+      { label: '+25% Military pay', type: 'pos' },
+      { label: 'Unlocks Officer track', type: 'neutral' },
+      { label: '$2.00/day upkeep', type: 'neg' },
+    ],
+    jobCategoryReq: null,
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// JOB DATA
+// ═══════════════════════════════════════════════════════════════
+const JOBS = [
+  // ── Labor ──
+  { id: 'scavenger',  category: 'Labor',    name: 'Scavenger',        desc: 'Collect scrap and sell it. No requirements. Humble beginnings.',     payPerDay: 8,   requires: {},                        passiveStats: { str: 0.6, con: 0.6 } },
+  { id: 'laborer',    category: 'Labor',    name: 'Day Laborer',      desc: 'Manual labor for construction crews. Hard work, steady pay.',          payPerDay: 18,  requires: { str: 10 },               passiveStats: { str: 1.0, con: 0.8 } },
+  { id: 'miner',      category: 'Labor',    name: 'Miner',            desc: 'Extract ore from the earth. Demanding but well-compensated.',           payPerDay: 35,  requires: { str: 25, con: 20 },      passiveStats: { str: 1.4, con: 1.2 } },
+  // ── Trade ──
+  { id: 'peddler',    category: 'Trade',    name: 'Street Peddler',   desc: 'Sell goods at the market. Requires a silver tongue.',                  payPerDay: 12,  requires: { cha: 8 },                passiveStats: { cha: 0.8, int: 0.4 } },
+  { id: 'merchant',   category: 'Trade',    name: 'Merchant',         desc: 'Buy low, sell high. Knowledge of markets is power.',                    payPerDay: 40,  requires: { cha: 20, int: 15 },      passiveStats: { cha: 1.2, int: 0.8 } },
+  { id: 'trader',     category: 'Trade',    name: 'Trade Master',     desc: 'Lead your own trading operation. Command and persuasion.',               payPerDay: 90,  requires: { cha: 40, int: 30, wis: 15 }, passiveStats: { cha: 1.5, int: 1.0, wis: 0.5 } },
+  // ── Military ──
+  { id: 'recruit',    category: 'Military', name: 'Army Recruit',     desc: 'Join the military. Discipline, strength, and structure.',               payPerDay: 22,  requires: { str: 15, con: 10 },      passiveStats: { str: 0.8, con: 0.8, dex: 0.6 } },
+  { id: 'soldier',    category: 'Military', name: 'Soldier',          desc: 'A proven fighter. Strength and agility in equal measure.',               payPerDay: 50,  requires: { str: 30, dex: 20, con: 20 }, passiveStats: { str: 1.2, con: 1.0, dex: 1.0 } },
+  { id: 'officer',    category: 'Military', name: 'Officer',          desc: 'Lead your unit. Tactical wisdom and iron will required.',                payPerDay: 110, requires: { str: 45, dex: 35, con: 30, wis: 20 }, passiveStats: { str: 1.0, dex: 1.0, con: 0.8, wis: 1.2 } },
+  // ── Knowledge ──
+  { id: 'apprentice', category: 'Knowledge', name: 'Apprentice Scholar', desc: 'Assist learned folk in exchange for pay and knowledge.',             payPerDay: 14,  requires: { int: 10 },               passiveStats: { int: 0.8, wis: 0.5 } },
+  { id: 'scribe',     category: 'Knowledge', name: 'Scribe',            desc: 'Record and copy texts. Demands a sharp and organized mind.',           payPerDay: 32,  requires: { int: 20, wis: 12 },      passiveStats: { int: 1.2, wis: 0.8 } },
+  { id: 'advisor',    category: 'Knowledge', name: 'Royal Advisor',     desc: 'Counsel the powerful. Requires vast wisdom and insight.',              payPerDay: 120, requires: { int: 45, wis: 40, cha: 25 }, passiveStats: { int: 1.3, wis: 1.5, cha: 0.8 } },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// TRAINING DATA
+// ═══════════════════════════════════════════════════════════════
+const SKILLS = [
+  { id: 'bodywork',   name: 'Bodywork',       stat: 'str', ratePerTick: 1.2, energyCost: 1.2, requires: {},         desc: 'Physical conditioning. Builds raw strength.' },
+  { id: 'reflexes',   name: 'Reflex Drills',  stat: 'dex', ratePerTick: 1.2, energyCost: 1.1, requires: {},         desc: 'Speed and precision training.' },
+  { id: 'endurance',  name: 'Endurance Run',  stat: 'con', ratePerTick: 1.0, energyCost: 0.9, requires: {},         desc: 'Builds stamina and raises max energy.' },
+  { id: 'study',      name: 'Study',          stat: 'int', ratePerTick: 1.1, energyCost: 0.8, requires: {},         desc: 'Hit the books. Sharpens the intellect.' },
+  { id: 'meditation', name: 'Meditation',     stat: 'wis', ratePerTick: 0.9, energyCost: 0.5, requires: { int: 15 }, desc: 'Quiet the mind. Requires some Intelligence.' },
+  { id: 'rhetoric',   name: 'Rhetoric',       stat: 'cha', ratePerTick: 1.0, energyCost: 0.7, requires: { int: 10 }, desc: 'Practice speaking and persuasion.' },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// GAME STATE
+// ═══════════════════════════════════════════════════════════════
+const SAVE_KEY = 'chronicle_save_v4';
+
+function defaultState() {
+  return {
+    tick: 0,
+    dayTick: 0,
+    age: 18.0,
+    day: 1,
+    money: 0,
+    energy: 100,
+    happiness: 50,
+    housingTier: 0,
+    stats:  { str: 0, dex: 0, con: 0, int: 0, wis: 0, cha: 0 },
+    statXP: { str: 0, dex: 0, con: 0, int: 0, wis: 0, cha: 0 },
+    activity: 'rest',
+    activityProgress: 0,
+    jobId: 'scavenger',
+    prestigeCount: 0,
+    totalEarned: 0,
+    // Equipment: which items are owned and which is equipped
+    ownedEquipment: [],    // array of equipment ids
+    equippedItems: [],     // array of equipped ids (can equip multiple owned items)
+  };
+}
+
+let G = loadGame();
+
+// ═══════════════════════════════════════════════════════════════
+// ENGINE — DERIVED VALUES
+// ═══════════════════════════════════════════════════════════════
+
+function getHousing() { return HOUSING[G.housingTier]; }
+function getLegacyMultiplier() { return 1 + G.prestigeCount * PRESTIGE_BONUS_PER_COUNT; }
+
+function getMaxEnergy() {
+  const base = ENERGY_BASE_MAX + G.stats.con * ENERGY_CON_BONUS_PER_PT;
+  return Math.floor(base);
+}
+
+function getEnergyRegenRate() {
+  const housing   = getHousing();
+  const base      = 0.8;
+  const housingMult = 1 + housing.energyRegenBonus;
+  // CON also improves regen
+  const conBonus  = 1 + G.stats.con * ENERGY_CON_REGEN_PER_PT;
+  // Happiness modifier: 0.65× to 1.35×
+  const happyMult = 0.65 + (G.happiness / 100) * 0.70;
+  return base * housingMult * conBonus * happyMult;
+}
+
+function getEnergyDrainMult() {
+  // Equipment can reduce drain
+  let reduction = 0;
+  for (const id of G.equippedItems) {
+    const eq = EQUIPMENT.find(e => e.id === id);
+    if (eq && eq.energyDrainReduction) reduction += eq.energyDrainReduction;
+  }
+  return Math.max(0.4, 1.0 - reduction);
+}
+
+// DEX → faster action speed (shorter effective cycle)
+function getSpeedMult() {
+  return 1 + Math.min(G.stats.dex * DEX_SPEED_PER_PT, 0.4);
+}
+
+// INT → XP multiplier
+function getIntXpMult() {
+  return 1 + Math.min(G.stats.int * INT_XP_PER_PT, 0.6);
+}
+
+// Equipment XP bonus for a given stat
+function getEquipXpBonus(stat) {
+  let bonus = 0;
+  for (const id of G.equippedItems) {
+    const eq = EQUIPMENT.find(e => e.id === id);
+    if (eq && eq.xpBonus && eq.xpStats && eq.xpStats.includes(stat)) {
+      bonus += eq.xpBonus;
+    }
+  }
+  return bonus;
+}
+
+// WIS → slows happiness decay
+function getHappyDecayMult() {
+  return Math.max(0.4, 1.0 - Math.min(G.stats.wis * WIS_HAPPY_DECAY_PER_PT, 0.6));
+}
+
+// Happiness effects earnings and regen as before
+function getHappinessEarningsMult() {
+  return 0.75 + (G.happiness / 100) * 0.5;
+}
+
+// STR → bonus to physical (Labor / Military) job pay
+function getStrPayBonus(category) {
+  if (category === 'Labor' || category === 'Military') {
+    return 1 + Math.min(G.stats.str * STR_PAY_PER_PT, 0.6);
+  }
+  return 1.0;
+}
+
+// CHA → bonus to trade/social (Trade / Knowledge) job pay
+function getChaPayBonus(category) {
+  if (category === 'Trade' || category === 'Knowledge') {
+    return 1 + Math.min(G.stats.cha * CHA_PAY_PER_PT, 0.7);
+  }
+  return 1.0;
+}
+
+// Equipment earnings bonus for a given job category
+function getEquipEarningsBonus(category) {
+  let mult = 1.0;
+  for (const id of G.equippedItems) {
+    const eq = EQUIPMENT.find(e => e.id === id);
+    if (eq) {
+      if (eq.earningsBonus && eq.earningsBonus.category === category) {
+        mult += eq.earningsBonus.pct;
+      }
+      if (eq.earningsBonusB && eq.earningsBonusB.category === category) {
+        mult += eq.earningsBonusB.pct;
+      }
+    }
+  }
+  return mult;
+}
+
+function getJob() { return JOBS.find(j => j.id === G.jobId) || JOBS[0]; }
+function getSkillDef(id) { return SKILLS.find(s => s.id === id); }
+
+function meetsRequirements(requires) {
+  for (const [stat, val] of Object.entries(requires)) {
+    if ((G.stats[stat] || 0) < val) return false;
+  }
+  return true;
+}
+
+function getJobPayPerTick(job) {
+  const base      = job.payPerDay / TICKS_PER_DAY;
+  const happyMult = getHappinessEarningsMult();
+  const strBonus  = getStrPayBonus(job.category);
+  const chaBonus  = getChaPayBonus(job.category);
+  const equipMult = getEquipEarningsBonus(job.category);
+  const legacy    = getLegacyMultiplier();
+  return base * happyMult * strBonus * chaBonus * equipMult * legacy;
+}
+
+// Total daily upkeep (housing + equipped items)
+function getTotalUpkeepPerDay() {
+  let total = getHousing().upkeepPerDay;
+  for (const id of G.equippedItems) {
+    const eq = EQUIPMENT.find(e => e.id === id);
+    if (eq) total += eq.maintenancePerDay;
+  }
+  return total;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ENGINE — TICK
+// ═══════════════════════════════════════════════════════════════
+function tick() {
+  G.tick++;
+  G.dayTick++;
+
+  const events     = [];
+  const maxEnergy  = getMaxEnergy();
+  const housing    = getHousing();
+  const speedMult  = getSpeedMult();
+  const drainMult  = getEnergyDrainMult();
+
+  // ── Day boundary ─────────────────────────────────────────────
+  if (G.dayTick >= TICKS_PER_DAY) {
+    G.dayTick = 0;
+    G.day++;
+    G.age = 18 + (G.day - 1) / DAYS_PER_YEAR;
+
+    // Housing + equipment upkeep
+    const upkeep = getTotalUpkeepPerDay();
+    if (upkeep > 0) {
+      G.money = Math.max(0, G.money - upkeep);
+    }
+
+    // Age milestone
+    const ageFloor = Math.floor(G.age);
+    if (Math.abs(G.age - ageFloor) < 1 / DAYS_PER_YEAR) {
+      events.push(`You turn ${ageFloor}. Life marches forward.`);
+    }
+  }
+
+  // ── Activity progress — DEX speeds up bar fill ────────────────
+  // activityProgress fills 0→100 in one "day" at base speed
+  // With DEX, it fills faster (visual only; rewards are per-tick not per-cycle)
+  const progInc = (100 / TICKS_PER_DAY) * speedMult;
+
+  const act = G.activity;
+  let energyDrain = 0;
+
+  if (act === 'work') {
+    const job = getJob();
+    const pay = getJobPayPerTick(job);
+    G.money += pay;
+    G.totalEarned += pay;
+    energyDrain = ENERGY_DRAIN_BASE * drainMult * 1.0;
+
+    // Passive stat XP from job (INT amplifies)
+    const intMult = getIntXpMult();
+    for (const [stat, rate] of Object.entries(job.passiveStats || {})) {
+      const equipBonus = 1 + getEquipXpBonus(stat);
+      gainStatXP(stat, rate * JOB_STAT_RATE * intMult * equipBonus * getLegacyMultiplier());
+    }
+
+    G.activityProgress = (G.activityProgress + progInc) % 100;
+
+    // Happiness drain from work (WIS reduces it)
+    const workDrain = HAPPY_WORK_DRAIN * getHappyDecayMult();
+    G.happiness = Math.max(HAPPY_MIN_FLOOR, G.happiness - workDrain);
+
+  } else if (act === 'rest') {
+    const regen = getEnergyRegenRate();
+    G.energy = Math.min(maxEnergy, G.energy + regen);
+
+    // Happiness regen from rest (housing bonus + WIS passive bonus)
+    const wisBonus = G.stats.wis * HAPPY_WIS_REGEN_BONUS;
+    G.happiness = Math.min(100, G.happiness + HAPPY_REST_RATE + housing.happyTickBonus + wisBonus);
+
+    G.activityProgress = (G.activityProgress + progInc) % 100;
+
+  } else {
+    // Training a skill
+    const skill = getSkillDef(act);
+    if (skill) {
+      energyDrain = ENERGY_DRAIN_BASE * drainMult * skill.energyCost;
+
+      if (G.energy > 0) {
+        const intMult    = getIntXpMult();
+        const equipBonus = 1 + getEquipXpBonus(skill.stat);
+        const xpGain     = skill.ratePerTick * intMult * equipBonus * getLegacyMultiplier();
+        gainStatXP(skill.stat, xpGain);
+      }
+
+      G.activityProgress = (G.activityProgress + progInc) % 100;
+
+      // Training drains happiness (WIS reduces it)
+      const trainDrain = HAPPY_TRAIN_DRAIN * getHappyDecayMult();
+      G.happiness = Math.max(HAPPY_MIN_FLOOR, G.happiness - trainDrain);
+    }
+  }
+
+  // ── Energy drain ──────────────────────────────────────────────
+  if (energyDrain > 0) {
+    G.energy = Math.max(0, G.energy - energyDrain);
+    if (G.energy <= 0 && G.activity !== 'rest') {
+      G.activity = 'rest';
+      events.push('Exhausted. Forced to rest.');
+    }
+  }
+
+  // ── Happiness housing drift ───────────────────────────────────
+  // Poor housing actively drains happiness (homeless)
+  if (housing.happyDecayBonus > 0) {
+    const rawDrain = housing.happyDecayBonus * getHappyDecayMult();
+    G.happiness = Math.max(HAPPY_MIN_FLOOR, G.happiness - rawDrain);
+  }
+
+  // Passive drift toward housing baseline (very slow, only if below baseline)
+  const baseline = housing.happyBaseline;
+  if (G.happiness < baseline - 2 && G.activity !== 'rest') {
+    G.happiness = Math.min(baseline, G.happiness + HAPPY_IDLE_DRIFT);
+  }
+
+  G.happiness = Math.max(0, Math.min(100, G.happiness));
+
+  // ── Events ────────────────────────────────────────────────────
+  for (const e of events) addLog(e);
+}
+
+function gainStatXP(stat, amount) {
+  G.statXP[stat] = (G.statXP[stat] || 0) + amount;
+  const level    = G.stats[stat];
+  const required = 100 + level * 5;
+
+  while (G.statXP[stat] >= required && G.stats[stat] < 100) {
+    G.statXP[stat] -= required;
+    G.stats[stat] = Math.min(100, G.stats[stat] + 1);
+    const names = { str:'Strength', dex:'Dexterity', con:'Constitution', int:'Intelligence', wis:'Wisdom', cha:'Charisma' };
+    addLog(`${names[stat]} reached ${G.stats[stat]}!`);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EQUIPMENT ACTIONS
+// ═══════════════════════════════════════════════════════════════
+function buyEquipment(id) {
+  const eq = EQUIPMENT.find(e => e.id === id);
+  if (!eq || G.ownedEquipment.includes(id)) return;
+  if (!meetsRequirements(eq.requires)) { addLog(`Can't equip ${eq.name}: requirements not met.`); return; }
+  if (G.money < eq.cost) { addLog(`Can't afford ${eq.name}. Need $${eq.cost.toFixed(0)}.`); return; }
+  G.money -= eq.cost;
+  G.ownedEquipment.push(id);
+  addLog(`Purchased ${eq.icon} ${eq.name}. Daily upkeep: $${eq.maintenancePerDay}/day.`);
+  renderAll();
+}
+
+function equipItem(id) {
+  if (!G.ownedEquipment.includes(id)) return;
+  if (G.equippedItems.includes(id)) return;
+  G.equippedItems.push(id);
+  const eq = EQUIPMENT.find(e => e.id === id);
+  addLog(`Equipped ${eq.icon} ${eq.name}.`);
+  renderAll();
+}
+
+function unequipItem(id) {
+  G.equippedItems = G.equippedItems.filter(i => i !== id);
+  const eq = EQUIPMENT.find(e => e.id === id);
+  addLog(`Unequipped ${eq.icon} ${eq.name}.`);
+  renderAll();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PRESTIGE & SAVE
+// ═══════════════════════════════════════════════════════════════
+function doPrestige() {
+  if (G.age < PRESTIGE_MIN_AGE) return;
+  G.prestigeCount++;
+  const prev = G;
+  G = defaultState();
+  G.prestigeCount = prev.prestigeCount;
+  addLog(`Prestige! You begin again with legacy bonus ×${getLegacyMultiplier().toFixed(2)}.`);
+  saveGame(); renderAll();
+}
+
+function hardReset() {
+  if (!confirm('Reset all progress including prestige? This cannot be undone.')) return;
+  localStorage.removeItem(SAVE_KEY);
+  G = defaultState();
+  renderAll();
+  addLog('All progress erased. A new story begins.');
+}
+
+function saveGame() {
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(G)); } catch(e) {}
+}
+
+function loadGame() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return defaultState();
+    const saved = JSON.parse(raw);
+    const def = defaultState();
+    return {
+      ...def, ...saved,
+      stats:          { ...def.stats,  ...(saved.stats  || {}) },
+      statXP:         { ...def.statXP, ...(saved.statXP || {}) },
+      ownedEquipment: saved.ownedEquipment || [],
+      equippedItems:  saved.equippedItems  || [],
+    };
+  } catch(e) { return defaultState(); }
+}
+
+function buyHousing(tier) {
+  if (tier <= G.housingTier) return;
+  const h = HOUSING[tier];
+  if (G.money < h.cost) { addLog(`Can't afford ${h.name}. Need $${h.cost.toFixed(0)}.`); return; }
+  G.money -= h.cost;
+  G.housingTier = tier;
+  addLog(`You move into ${h.icon} ${h.name}. A new chapter.`);
+  renderAll();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UI — LOG
+// ═══════════════════════════════════════════════════════════════
+const MAX_LOG = 80;
+let logEntries = [];
+
+function addLog(msg) {
+  logEntries.unshift({ msg, fresh: true });
+  if (logEntries.length > MAX_LOG) logEntries.pop();
+  renderLog();
+}
+
+function renderLog() {
+  const el = document.getElementById('log');
+  el.innerHTML = logEntries.map((e, i) =>
+    `<div class="log-entry${i === 0 ? ' new' : ''}">${e.msg}</div>`
+  ).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UI — TABS
+// ═══════════════════════════════════════════════════════════════
+let activeTab = 'jobs';
+function switchTab(tab) {
+  activeTab = tab;
+  const tabs = ['jobs','skills','housing','equipment','prestige'];
+  document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', tabs[i] === tab));
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('visible'));
+  document.getElementById(`tab-${tab}`).classList.add('visible');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UI — RENDER
+// ═══════════════════════════════════════════════════════════════
+function fmt(n) { return n.toFixed(1); }
+function fmtMoney(n) { return '$' + n.toFixed(2); }
+
+function renderAll() {
+  renderStats();
+  renderActivities();
+  renderJobs();
+  renderSkillsList();
+  renderHousingList();
+  renderEquipmentList();
+  renderPrestige();
+}
+
+function renderStats() {
+  const maxEnergy  = getMaxEnergy();
+  const housing    = getHousing();
+  const legacy     = getLegacyMultiplier();
+  const str        = G.stats.str;
+  const dex        = G.stats.dex;
+  const con        = G.stats.con;
+  const wis        = G.stats.wis;
+  const cha        = G.stats.cha;
+
+  // Header
+  document.getElementById('hdr-age').textContent = Math.floor(G.age);
+  document.getElementById('hdr-day').textContent = G.day;
+
+  // Upkeep header note
+  const upkeep = getTotalUpkeepPerDay();
+  const hdrUp = document.getElementById('hdr-upkeep');
+  if (upkeep > 0) {
+    hdrUp.style.display = '';
+    hdrUp.textContent = `−$${upkeep.toFixed(2)}/day`;
+  } else {
+    hdrUp.style.display = 'none';
+  }
+
+  // Prestige badge
+  const badge = document.getElementById('prestige-badge');
+  if (G.prestigeCount > 0) { badge.style.display = ''; badge.textContent = `Prestige ${G.prestigeCount}`; }
+  else { badge.style.display = 'none'; }
+
+  // Resources
+  document.getElementById('stat-money').textContent = fmtMoney(G.money);
+  document.getElementById('stat-age').textContent   = fmt(G.age);
+
+  // Upkeep summary in left panel
+  const upkeepSec = document.getElementById('upkeep-summary');
+  const upkeepVal = document.getElementById('upkeep-total-val');
+  if (upkeep > 0) {
+    upkeepSec.style.display = '';
+    upkeepVal.textContent = `$${upkeep.toFixed(2)}/day`;
+  } else {
+    upkeepSec.style.display = 'none';
+  }
+
+  // Energy
+  const energyPct = (G.energy / maxEnergy * 100).toFixed(1);
+  document.getElementById('energy-val').textContent = `${Math.floor(G.energy)}/${maxEnergy}`;
+  document.getElementById('energy-bar').style.width = energyPct + '%';
+  const regen = getEnergyRegenRate();
+  const drain = ENERGY_DRAIN_BASE * getEnergyDrainMult();
+  document.getElementById('energy-detail').textContent =
+    `Regen: +${regen.toFixed(2)}/tick · Drain: ${drain.toFixed(2)}/tick · Max: ${maxEnergy}`;
+
+  // Happiness
+  const happyBar  = document.getElementById('happy-bar');
+  happyBar.style.width = G.happiness + '%';
+  happyBar.className   = `vital-fill happy${G.happiness < 30 ? ' low' : ''}`;
+  document.getElementById('happy-val').textContent = `${Math.floor(G.happiness)}/100`;
+  const earningsMod = ((getHappinessEarningsMult() - 1) * 100).toFixed(0);
+  const earningsSign = earningsMod >= 0 ? '+' : '';
+  const decayReduction = Math.round((1 - getHappyDecayMult()) * 100);
+  document.getElementById('happy-detail').textContent =
+    `Earnings: ${earningsSign}${earningsMod}% · WIS reduces decay by ${decayReduction}%`;
+
+  // Housing inline
+  document.getElementById('housing-icon').textContent = housing.icon;
+  document.getElementById('housing-name').textContent = housing.name;
+  document.getElementById('housing-tier-label').textContent = `Tier ${housing.tier}`;
+  document.getElementById('housing-bonuses-inline').innerHTML =
+    housing.bonuses.map(b => `<span class="housing-bonus-pill ${b.type}">${b.label}</span>`).join('');
+
+  // Equipment summary in left panel
+  const eqSec = document.getElementById('equip-summary-section');
+  const eqPills = document.getElementById('equip-summary-pills');
+  const eqEffects = document.getElementById('equip-effect-summary');
+  if (G.equippedItems.length > 0) {
+    eqSec.style.display = '';
+    eqPills.innerHTML = G.equippedItems.map(id => {
+      const eq = EQUIPMENT.find(e => e.id === id);
+      return eq ? `<span class="eq-pill-small">${eq.icon} ${eq.name}</span>` : '';
+    }).join('');
+    // Build concise effect list
+    const effects = [];
+    for (const id of G.equippedItems) {
+      const eq = EQUIPMENT.find(e => e.id === id);
+      if (!eq) continue;
+      if (eq.earningsBonus) effects.push(`${eq.earningsBonus.category} +${Math.round(eq.earningsBonus.pct*100)}%`);
+      if (eq.earningsBonusB) effects.push(`${eq.earningsBonusB.category} +${Math.round(eq.earningsBonusB.pct*100)}%`);
+      if (eq.xpBonus) effects.push(`${eq.xpStats.join('/').toUpperCase()} XP +${Math.round(eq.xpBonus*100)}%`);
+      if (eq.energyDrainReduction) effects.push(`Drain −${Math.round(eq.energyDrainReduction*100)}%`);
+    }
+    eqEffects.textContent = effects.join(' · ') || 'No active bonuses';
+  } else {
+    eqSec.style.display = 'none';
+  }
+
+  // RPG Stats with live effect hints
+  const statKeys = ['str','dex','con','int','wis','cha'];
+  const statEffects = {
+    str: `↑ Physical pay ×${(1 + Math.min(str * STR_PAY_PER_PT, 0.6)).toFixed(2)}`,
+    dex: `↑ Action speed ×${getSpeedMult().toFixed(2)}`,
+    con: `↑ Max energy: ${maxEnergy} · Regen ×${(1 + con * ENERGY_CON_REGEN_PER_PT).toFixed(2)}`,
+    int: `↑ XP rate ×${getIntXpMult().toFixed(2)}`,
+    wis: `↓ Decay −${Math.round((1 - getHappyDecayMult()) * 100)}%`,
+    cha: `↑ Trade pay ×${(1 + Math.min(cha * CHA_PAY_PER_PT, 0.7)).toFixed(2)}`,
+  };
+
+  for (const s of statKeys) {
+    const level = G.stats[s];
+    const xp    = G.statXP[s] || 0;
+    const req   = 100 + level * 5;
+    const fill  = level >= 100 ? 100 : (xp / req * 100);
+    document.getElementById(`${s}-nums`).textContent   = `${level}/100`;
+    document.getElementById(`${s}-bar`).style.width    = fill + '%';
+    document.getElementById(`${s}-effect`).textContent = statEffects[s];
+  }
+
+  // Legacy
+  document.getElementById('prestige-count').textContent = G.prestigeCount;
+  document.getElementById('legacy-bonus').textContent   = `×${legacy.toFixed(2)}`;
+}
+
+function renderActivities() {
+  const maxEnergy = getMaxEnergy();
+  const job       = getJob();
+  const drainMult = getEnergyDrainMult();
+  const speedMult = getSpeedMult();
+
+  // Work
+  const payPerTick   = getJobPayPerTick(job);
+  const drain        = (ENERGY_DRAIN_BASE * drainMult).toFixed(2);
+  const strBonusPct  = Math.round((getStrPayBonus(job.category) - 1) * 100);
+  const chaBonusPct  = Math.round((getChaPayBonus(job.category) - 1) * 100);
+  const eqBonusPct   = Math.round((getEquipEarningsBonus(job.category) - 1) * 100);
+  const bonusNote    = [
+    strBonusPct > 0 ? `STR +${strBonusPct}%` : '',
+    chaBonusPct > 0 ? `CHA +${chaBonusPct}%` : '',
+    eqBonusPct  > 0 ? `Gear +${eqBonusPct}%` : '',
+  ].filter(Boolean).join(' · ');
+
+  document.getElementById('work-activities').innerHTML = `
+    <div class="activity-card ${G.activity === 'work' ? 'active' : ''}" onclick="setActivity('work')">
+      <div class="act-header">
+        <span class="act-name">⚒ Work — ${job.name}</span>
+        <span class="act-cost">−${drain} ⚡/tick</span>
+      </div>
+      <div class="act-desc">${job.desc} · <span style="color:var(--green)">+$${payPerTick.toFixed(3)}/tick</span></div>
+      ${bonusNote ? `<div class="act-desc" style="color:var(--amber);font-size:10px;margin-bottom:4px;">Bonuses: ${bonusNote}</div>` : ''}
+      <div class="act-desc" style="color:var(--sky);font-size:10px;margin-bottom:5px;">
+        😊 Drains happiness · DEX speed ×${speedMult.toFixed(2)}
+      </div>
+      <div class="act-progress"><div class="act-progress-fill" style="width:${G.activity === 'work' ? G.activityProgress : 0}%"></div></div>
+    </div>`;
+
+  // Train
+  document.getElementById('train-activities').innerHTML = SKILLS.map(skill => {
+    const locked      = !meetsRequirements(skill.requires);
+    const active      = G.activity === skill.id;
+    const trainDrain  = (ENERGY_DRAIN_BASE * drainMult * skill.energyCost).toFixed(2);
+    const reqText     = locked ? Object.entries(skill.requires).map(([k,v]) => `${k.toUpperCase()} ${v}`).join(', ') + ' required' : '';
+    const intBonus    = Math.round((getIntXpMult() - 1) * 100);
+    const eqBonus     = Math.round(getEquipXpBonus(skill.stat) * 100);
+    const xpNote      = [intBonus > 0 ? `INT +${intBonus}%` : '', eqBonus > 0 ? `Gear +${eqBonus}%` : ''].filter(Boolean).join(' · ');
+    return `
+      <div class="activity-card ${active ? 'active teal-act' : ''}"
+           onclick="${locked ? '' : `setActivity('${skill.id}')`}"
+           style="${locked ? 'opacity:0.45;cursor:not-allowed;' : ''}">
+        <div class="act-header">
+          <span class="act-name">${skill.name}</span>
+          <span class="act-cost">−${trainDrain} ⚡/tick</span>
+        </div>
+        <div class="act-desc">${skill.desc}${reqText ? ' · <em>'+reqText+'</em>' : ''} · <span class="c-${skill.stat}">+${skill.stat.toUpperCase()} XP</span></div>
+        ${xpNote ? `<div class="act-desc" style="color:var(--amber);font-size:10px;margin-bottom:4px;">XP Bonus: ${xpNote}</div>` : ''}
+        <div class="act-desc" style="color:var(--sky);font-size:10px;margin-bottom:5px;">😊 Slight happiness drain</div>
+        <div class="act-progress"><div class="act-progress-fill teal" style="width:${active ? G.activityProgress : 0}%"></div></div>
+      </div>`;
+  }).join('');
+
+  // Rest
+  const regenRate   = getEnergyRegenRate().toFixed(2);
+  const housing     = getHousing();
+  const wisHappy    = (G.stats.wis * HAPPY_WIS_REGEN_BONUS * TICKS_PER_DAY).toFixed(1);
+  document.getElementById('rest-activities').innerHTML = `
+    <div class="activity-card ${G.activity === 'rest' ? 'active green-act' : ''}" onclick="setActivity('rest')">
+      <div class="act-header">
+        <span class="act-name">💤 Rest</span>
+        <span class="act-cost" style="color:var(--green)">+${regenRate} ⚡/tick</span>
+      </div>
+      <div class="act-desc">
+        Recover energy and happiness. Regen boosted by CON, housing (${housing.icon}), and happiness level.
+      </div>
+      <div class="act-desc" style="color:var(--green);font-size:10px;margin-bottom:5px;">
+        😊 Restores happiness · WIS adds +${wisHappy} happy/day passively
+      </div>
+      <div class="act-progress"><div class="act-progress-fill green" style="width:${G.activity === 'rest' ? G.activityProgress : 0}%"></div></div>
+    </div>`;
+}
+
+function renderJobs() {
+  const categories = ['Labor', 'Trade', 'Military', 'Knowledge'];
+  document.getElementById('jobs-list').innerHTML = categories.map(cat => {
+    const rows = JOBS.filter(j => j.category === cat).map(job => {
+      const locked  = !meetsRequirements(job.requires);
+      const active  = G.jobId === job.id;
+      const reqText = Object.entries(job.requires).map(([k,v]) => `${k.toUpperCase()} ${v}`).join(', ') || 'None';
+      const passText = Object.entries(job.passiveStats || {}).map(([k]) => `<span class="c-${k}">${k.toUpperCase()}</span>`).join(', ');
+      // Show the effective pay including stat bonuses
+      const effectivePay = getJobPayPerTick(job) * TICKS_PER_DAY;
+      const payNote = effectivePay !== job.payPerDay ?
+        `<span style="color:var(--text-muted);text-decoration:line-through;font-size:10px;">$${job.payPerDay}</span> <span style="color:var(--green);">$${effectivePay.toFixed(1)}/day</span>` :
+        `<span class="job-pay">$${job.payPerDay}/day</span>`;
+      return `
+        <div class="job-card ${locked ? 'locked' : ''} ${active ? 'active' : ''}"
+             onclick="${locked ? '' : `selectJob('${job.id}')`}">
+          <div class="job-header">
+            <span class="job-name">${job.name} <span style="font-size:10px;color:var(--text-muted)">[${cat}]</span></span>
+            <span>${payNote}</span>
+          </div>
+          <div class="job-desc">${job.desc}</div>
+          <div class="job-req ${meetsRequirements(job.requires) ? 'met' : ''}">Requires: ${reqText}</div>
+          <div class="job-stats">Passive gains: ${passText || '—'}</div>
+        </div>`;
+    }).join('');
+    return `<div class="cat-header">${cat}</div>${rows}`;
+  }).join('');
+}
+
+function renderSkillsList() {
+  document.getElementById('skills-list').innerHTML = SKILLS.map(skill => {
+    const locked  = !meetsRequirements(skill.requires);
+    const level   = G.stats[skill.stat];
+    const xp      = G.statXP[skill.stat] || 0;
+    const req     = 100 + level * 5;
+    const fillPct = level >= 100 ? 100 : (xp / req * 100);
+    const reqText = Object.entries(skill.requires).map(([k,v]) => `${k.toUpperCase()} ${v}`).join(', ') || 'None';
+    const statColor = { str:'rose', dex:'sky', con:'green', int:'purple', wis:'amber', cha:'teal' }[skill.stat] || 'amber';
+    return `
+      <div class="job-card ${locked ? 'locked' : ''}">
+        <div class="job-header">
+          <span class="job-name">${skill.name}</span>
+          <span class="job-pay c-${skill.stat}">${skill.stat.toUpperCase()} ${level}</span>
+        </div>
+        <div class="job-desc">${skill.desc}</div>
+        <div class="job-req ${locked ? '' : 'met'}">Requires: ${reqText}</div>
+        <div style="margin-top:6px;">
+          <div class="bar-track" style="height:4px;">
+            <div class="bar-fill" style="width:${fillPct.toFixed(1)}%;background:var(--${statColor});"></div>
+          </div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">${xp.toFixed(1)} / ${req} XP · INT ×${getIntXpMult().toFixed(2)}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderHousingList() {
+  document.getElementById('housing-list').innerHTML = HOUSING.map((h, i) => {
+    const current    = G.housingTier === i;
+    const canAfford  = G.money >= h.cost;
+    const alreadyHave= i <= G.housingTier;
+    const locked     = !canAfford && !alreadyHave;
+    return `
+      <div class="housing-card ${current ? 'current' : ''} ${locked ? 'locked' : ''}"
+           onclick="${alreadyHave ? '' : `buyHousing(${i})`}">
+        <div class="housing-header">
+          <div class="housing-name">
+            ${h.icon} ${h.name}
+            <span class="housing-tier ${current ? 'current' : ''}">Tier ${h.tier}</span>
+          </div>
+          <span class="housing-cost ${h.cost === 0 ? 'free' : ''}">${h.cost === 0 ? 'Free' : fmtMoney(h.cost)}</span>
+        </div>
+        <div class="housing-desc">${h.desc}</div>
+        <div class="housing-bonuses">${h.bonuses.map(b => `<span class="housing-bonus-pill ${b.type}">${b.label}</span>`).join('')}</div>
+        ${current ? '<div style="font-size:10px;color:var(--teal);margin-top:5px;font-weight:700;">✓ Current residence</div>' : ''}
+        ${!alreadyHave && !current ? `<div style="font-size:10px;color:${canAfford ? 'var(--green)' : 'var(--text-muted)'};margin-top:5px;">${canAfford ? '✓ Affordable — click to move in' : `Need $${(h.cost - G.money).toFixed(2)} more`}</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+function renderEquipmentList() {
+  document.getElementById('equipment-list').innerHTML = EQUIPMENT.map(eq => {
+    const owned    = G.ownedEquipment.includes(eq.id);
+    const equipped = G.equippedItems.includes(eq.id);
+    const canAfford = G.money >= eq.cost;
+    const reqsMet  = meetsRequirements(eq.requires);
+    const locked   = !owned && (!reqsMet);
+    const reqText  = Object.entries(eq.requires).map(([k,v]) => `${k.toUpperCase()} ${v}`).join(', ');
+
+    let cardClass = 'equip-card';
+    if (equipped) cardClass += ' equipped-active';
+    else if (owned) cardClass += ' owned';
+    else if (locked) cardClass += ' locked-eq';
+
+    let badge = '';
+    if (equipped) badge = `<span class="equip-badge equipped-badge">Equipped</span>`;
+    else if (owned) badge = `<span class="equip-badge owned-badge">Owned</span>`;
+
+    let actions = '';
+    if (!owned) {
+      actions = `<div class="equip-actions">
+        <button class="equip-btn buy-btn" onclick="buyEquipment('${eq.id}')"
+          ${(!reqsMet || !canAfford) ? 'disabled' : ''}>
+          ${!reqsMet ? `Locked (${reqText})` : !canAfford ? `Need $${(eq.cost - G.money).toFixed(2)} more` : `Buy — $${eq.cost}`}
+        </button>
+      </div>`;
+    } else if (!equipped) {
+      actions = `<div class="equip-actions">
+        <button class="equip-btn equip-btn-act" onclick="equipItem('${eq.id}')">Equip</button>
+      </div>`;
+    } else {
+      actions = `<div class="equip-actions">
+        <button class="equip-btn unequip-btn" onclick="unequipItem('${eq.id}')">Unequip</button>
+      </div>`;
+    }
+
+    return `
+      <div class="${cardClass}">
+        <div class="equip-header">
+          <div class="equip-name">${eq.icon} ${eq.name} ${badge}</div>
+          <span class="equip-cost">${owned ? `$${eq.maintenancePerDay}/day` : `$${eq.cost}`}</span>
+        </div>
+        <div class="equip-desc">${eq.desc}</div>
+        <div class="equip-bonuses">${eq.pills.map(p => `<span class="equip-pill ${p.type}">${p.label}</span>`).join('')}</div>
+        ${actions}
+      </div>`;
+  }).join('');
+}
+
+function renderPrestige() {
+  const btn = document.getElementById('prestige-btn');
+  const canPrestige = G.age >= PRESTIGE_MIN_AGE;
+  btn.disabled = !canPrestige;
+  btn.textContent = canPrestige
+    ? `Prestige (×${(getLegacyMultiplier() + PRESTIGE_BONUS_PER_COUNT).toFixed(2)} bonus)`
+    : `Prestige (requires age ${PRESTIGE_MIN_AGE})`;
+  document.getElementById('prestige-next-bonus').textContent =
+    `×${(getLegacyMultiplier() + PRESTIGE_BONUS_PER_COUNT).toFixed(2)}`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UI — USER ACTIONS
+// ═══════════════════════════════════════════════════════════════
+function setActivity(id) {
+  G.activity = id;
+  G.activityProgress = 0;
+  renderAll();
+}
+
+function selectJob(id) {
+  const job = JOBS.find(j => j.id === id);
+  if (!job || !meetsRequirements(job.requires)) return;
+  G.jobId = id;
+  addLog(`New job: ${job.name}. $${job.payPerDay}/day base.`);
+  renderAll();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INTRO MODAL
+// ═══════════════════════════════════════════════════════════════
+function closeIntro() {
+  document.getElementById('intro-modal').style.display = 'none';
+  addLog('Your chronicle begins. Make it count.');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MAIN LOOP
+// ═══════════════════════════════════════════════════════════════
+let frameCount = 0;
+const RENDER_EVERY = 3;
+
+function gameLoop() {
+  tick();
+  frameCount++;
+  if (frameCount % RENDER_EVERY === 0) renderAll();
+  if (frameCount % (TICKS_PER_DAY * 2) === 0) saveGame();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+renderAll();
+renderLog();
+
+if (G.day === 1 && G.tick === 0) {
+  document.getElementById('intro-modal').style.display = 'flex';
+} else {
+  addLog('Save loaded. Welcome back.');
+}
+
+setInterval(gameLoop, TICK_MS);
+</script>
+</body>
+</html>
