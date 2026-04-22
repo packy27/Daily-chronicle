@@ -47,6 +47,119 @@
   --r-lg: 14px;
 }
 
+/* ── Center Tab Layout ────────────────────────────────────── */
+.center-tab-bar {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.center-tab-btn {
+  flex: 1;
+  padding: 6px 0;
+  border: none;
+  background: var(--bg-card);
+  color: var(--text-mid);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+.center-tab-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-bright);
+}
+.center-tab-btn.active {
+  color: var(--text-bright);
+  border-color: var(--amber);
+  background: var(--bg-hover);
+}
+.center-tab-content {
+  display: none;
+}
+.center-tab-content.visible {
+  display: block;
+}
+
+/* ── Story Choice Cards ──────────────────────────────────── */
+.choice-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 8px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.choice-card:hover {
+  background: var(--bg-hover);
+}
+.choice-card.locked {
+  opacity: 0.5;
+  cursor: default;
+}
+.choice-name {
+  font-weight: 700;
+  color: var(--text-bright);
+  margin-bottom: 4px;
+}
+.choice-desc {
+  font-size: 12px;
+  color: var(--text-mid);
+  margin-bottom: 4px;
+}
+.choice-req {
+  font-size: 11px;
+  color: var(--rose);
+  margin-bottom: 4px;
+}
+.choice-reward {
+  font-size: 11px;
+  color: var(--amber);
+  margin-bottom: 4px;
+}
+.choice-align {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* ── Story Progress Card ────────────────────────────────── */
+.choice-progress-card {
+  background: var(--bg-card);
+  border: 1px solid var(--amber);
+  border-radius: var(--r-sm);
+  padding: 8px;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+.choice-progress-card.active {
+  border-color: var(--pink);
+}
+.choice-progress-bar {
+  height: 4px;
+  background: var(--border);
+  margin-top: 4px;
+}
+.choice-progress-fill {
+  height: 100%;
+  background: var(--amber);
+}
+.choice-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* ── Activities Grid ──────────────────────────────────────── */
+#work-activities,
+#train-activities,
+#rest-activities {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
@@ -561,27 +674,35 @@ header {
 
     <!-- ═══ CENTER PANEL ═══ -->
     <div class="panel" style="border-left:1px solid var(--border); background: var(--bg-base);">
-      <div class="panel-title">Activities</div>
+      <div class="panel-title">Actions</div>
       <div style="padding:10px 12px;">
-        <!-- Stat reminder -->
-        <div class="info-box" style="margin:0 0 10px 0;">
-          <strong>Stats at a glance</strong> — STR boosts physical pay · CHA boosts trade pay · DEX speeds actions · CON raises max energy &amp; regen · INT multiplies XP · WIS slows happiness decay
+        <!-- Center tab navigation -->
+        <div class="center-tab-bar">
+          <button class="center-tab-btn active" data-tab="activities" onclick="switchCenterTab('activities')">Activities</button>
+          <button class="center-tab-btn" data-tab="training" onclick="switchCenterTab('training')">Training</button>
+          <button class="center-tab-btn" data-tab="story" onclick="switchCenterTab('story')">Story</button>
         </div>
-
-        <!-- Story task section — shown when a task is active -->
-        <div id="story-task-section" style="display:none;">
-          <div class="section-label" style="margin-bottom:6px;">📖 Story Task</div>
-          <div id="story-task-card"></div>
+        <!-- Activities tab content -->
+        <div id="center-tab-activities" class="center-tab-content visible">
+          <div class="info-box" id="activities-info-box" style="margin:0 0 10px 0;">
+            <strong>Stats at a glance</strong> — STR boosts physical pay · CHA boosts trade pay · DEX speeds actions · CON raises max energy &amp; regen · INT multiplies XP · WIS slows happiness decay
+          </div>
+          <!-- Work activities -->
+          <div class="section-label" style="margin-bottom:8px;">Work</div>
+          <div id="work-activities"></div>
+          <!-- Rest activities -->
+          <div class="section-label" style="margin:10px 0 8px;">Rest</div>
+          <div id="rest-activities"></div>
         </div>
-
-        <div class="section-label" style="margin-bottom:8px;">Work</div>
-        <div id="work-activities"></div>
-
-        <div class="section-label" style="margin:10px 0 8px;">Train</div>
-        <div id="train-activities"></div>
-
-        <div class="section-label" style="margin:10px 0 8px;">Rest</div>
-        <div id="rest-activities"></div>
+        <!-- Training tab content -->
+        <div id="center-tab-training" class="center-tab-content">
+          <div class="section-label" style="margin-bottom:8px;">Training</div>
+          <div id="train-activities"></div>
+        </div>
+        <!-- Story tab content -->
+        <div id="center-tab-story" class="center-tab-content">
+          <div id="story-content"></div>
+        </div>
       </div>
     </div>
 
@@ -589,7 +710,6 @@ header {
     <div class="panel">
       <div class="tab-bar">
         <button class="tab-btn active"  onclick="switchTab('jobs')">Jobs</button>
-        <button class="tab-btn"         onclick="switchTab('skills')">Train</button>
         <button class="tab-btn"         onclick="switchTab('story')">Story</button>
         <button class="tab-btn"         onclick="switchTab('housing')">Housing</button>
         <button class="tab-btn"         onclick="switchTab('equipment')">Gear</button>
@@ -597,7 +717,6 @@ header {
       </div>
 
       <div class="tab-content visible" id="tab-jobs"><div id="jobs-list"></div></div>
-      <div class="tab-content"         id="tab-skills"><div id="skills-list"></div></div>
 
       <!-- STORY TAB -->
       <div class="tab-content" id="tab-story">
@@ -709,79 +828,188 @@ const STORY_ARC = {
       id: 'stage_meet',
       name: 'A Chance Meeting',
       quote: '"You look like you could use a break. I know a quiet spot near the well."',
-      desc: 'Spend time chatting with Mira in the market square. No cost, no skill needed — just a moment.',
-      taskId: 'story_task',
-      energyCostPerTick: 0.3,
-      ticksRequired: 60,   // ~45 real seconds at 150ms/tick
-      requires: {},
-      reward: { happyDecayFlat: 0.015, happyLabel: '−0.015 happiness decay/tick' },
-      rewardText: '😊 Happiness decay slightly reduced',
+      desc: 'Spend time chatting with Mira in the market square.',
       bondProgress: 1,
+      // Each story stage now offers multiple choices. Players must pick one to progress.
+      choices: [
+        {
+          id: 'talk',
+          name: 'Talk with Mira',
+          desc: 'Take a break and chat with her. You begin to learn about each other.',
+          energyCostPerTick: 0.30,
+          ticksRequired: 60,
+          requires: {},
+          reward: { happyDecayFlat: 0.015 },
+          rewardText: '😊 Happiness decay slightly reduced',
+          alignment: 'paragon'
+        },
+        {
+          id: 'ignore',
+          name: 'Keep Walking',
+          desc: 'Decide not to engage. You keep to yourself.',
+          energyCostPerTick: 0.15,
+          ticksRequired: 30,
+          requires: {},
+          reward: {},
+          rewardText: 'No reward',
+          alignment: 'renegade'
+        }
+      ]
     },
     {
       id: 'stage_help_carry',
       name: 'Lend a Hand',
       quote: '"The merchant down the lane has a heavy delivery. Would you help me carry it?"',
-      desc: 'Help Mira haul goods across the market. Costs energy — you\'re doing real work here.',
-      taskId: 'story_task',
-      energyCostPerTick: 0.9,
-      ticksRequired: 120,
-      requires: { str: 5 },
-      reward: { statBonus: { cha: 2 }, statLabel: '+2 CHA' },
-      rewardText: '💬 +2 Charisma',
+      desc: 'Help Mira haul goods across the market.',
       bondProgress: 2,
+      choices: [
+        {
+          id: 'help',
+          name: 'Help Mira',
+          desc: 'Pitch in and carry the goods with her.',
+          energyCostPerTick: 0.90,
+          ticksRequired: 120,
+          requires: { str: 5 },
+          reward: { statBonus: { cha: 2 } },
+          rewardText: '💬 +2 Charisma',
+          alignment: 'paragon'
+        },
+        {
+          id: 'decline',
+          name: 'Decline to Help',
+          desc: 'Politely refuse and continue your own work.',
+          energyCostPerTick: 0.30,
+          ticksRequired: 60,
+          requires: {},
+          reward: {},
+          rewardText: 'No reward',
+          alignment: 'renegade'
+        }
+      ]
     },
     {
       id: 'stage_evening_talk',
       name: 'Evening Conversation',
       quote: '"Tell me something real. Not what you do — who you are."',
-      desc: 'Spend an evening talking with Mira. She\'s perceptive. You find yourself thinking more clearly.',
-      taskId: 'story_task',
-      energyCostPerTick: 0.4,
-      ticksRequired: 100,
-      requires: { int: 8 },
-      reward: { xpMult: 0.05, xpLabel: '+5% all XP gains' },
-      rewardText: '📚 +5% XP gain (permanent)',
+      desc: 'Spend an evening talking with Mira.',
       bondProgress: 3,
+      choices: [
+        {
+          id: 'open_up',
+          name: 'Open Up',
+          desc: 'Share your thoughts and dreams with Mira.',
+          energyCostPerTick: 0.40,
+          ticksRequired: 100,
+          requires: { int: 8 },
+          reward: { xpMult: 0.05 },
+          rewardText: '📚 +5% XP gain (permanent)',
+          alignment: 'paragon'
+        },
+        {
+          id: 'avoid',
+          name: 'Stay Guarded',
+          desc: 'Keep the conversation light and avoid deep topics.',
+          energyCostPerTick: 0.20,
+          ticksRequired: 60,
+          requires: {},
+          reward: {},
+          rewardText: 'No reward',
+          alignment: 'renegade'
+        }
+      ]
     },
     {
       id: 'stage_defend',
       name: 'Stand Your Ground',
       quote: '"They tried to steal from me again. I need someone I can trust."',
-      desc: 'Protect Mira from a market bully. Requires strength and resolve.',
-      taskId: 'story_task',
-      energyCostPerTick: 1.2,
-      ticksRequired: 80,
-      requires: { str: 15, con: 10 },
-      reward: { statBonus: { str: 3 }, statLabel: '+3 STR' },
-      rewardText: '⚔ +3 Strength',
+      desc: 'Protect Mira from a market bully.',
       bondProgress: 4,
+      choices: [
+        {
+          id: 'defend',
+          name: 'Defend Mira',
+          desc: 'Stand up to the bully and protect Mira.',
+          energyCostPerTick: 1.20,
+          ticksRequired: 80,
+          requires: { str: 15, con: 10 },
+          reward: { statBonus: { str: 3 } },
+          rewardText: '⚔ +3 Strength',
+          alignment: 'paragon'
+        },
+        {
+          id: 'walk_away',
+          name: 'Walk Away',
+          desc: 'Avoid the confrontation and look after yourself.',
+          energyCostPerTick: 0.40,
+          ticksRequired: 60,
+          requires: {},
+          reward: {},
+          rewardText: 'No reward',
+          alignment: 'renegade'
+        }
+      ]
     },
     {
       id: 'stage_teach',
       name: 'Share What You Know',
       quote: '"You\'ve learned so much. Could you teach me? Even a little?"',
-      desc: 'Spend time teaching Mira a skill. You reinforce your own knowledge in the process.',
-      taskId: 'story_task',
-      energyCostPerTick: 0.5,
-      ticksRequired: 140,
-      requires: { int: 20, wis: 10 },
-      reward: { xpMult: 0.05, happyDecayFlat: 0.01, statLabel: '+5% XP, −decay' },
-      rewardText: '📚 +5% XP gain · 😊 Happiness decay reduced again',
+      desc: 'Spend time teaching Mira a skill.',
       bondProgress: 5,
+      choices: [
+        {
+          id: 'teach',
+          name: 'Teach Mira',
+          desc: 'Spend time teaching her your knowledge.',
+          energyCostPerTick: 0.50,
+          ticksRequired: 140,
+          requires: { int: 20, wis: 10 },
+          reward: { xpMult: 0.05, happyDecayFlat: 0.01 },
+          rewardText: '📚 +5% XP gain · 😊 Happiness decay reduced again',
+          alignment: 'paragon'
+        },
+        {
+          id: 'decline_teach',
+          name: 'Refuse to Teach',
+          desc: 'Keep your hard-earned knowledge to yourself.',
+          energyCostPerTick: 0.30,
+          ticksRequired: 60,
+          requires: {},
+          reward: {},
+          rewardText: 'No reward',
+          alignment: 'renegade'
+        }
+      ]
     },
     {
       id: 'stage_bond',
       name: 'A Bond Forged',
       quote: '"Whatever happens — I\'m glad our paths crossed."',
       desc: 'A final shared moment. The bond you\'ve built is something that won\'t fade.',
-      taskId: 'story_task',
-      energyCostPerTick: 0.3,
-      ticksRequired: 160,
-      requires: { cha: 20, wis: 15 },
-      reward: { happyDecayFlat: 0.02, statBonus: { wis: 3, cha: 3 }, statLabel: '+3 WIS/CHA, −decay' },
-      rewardText: '🤝 +3 WIS/CHA · Happiness decay significantly reduced',
       bondProgress: 6,
+      choices: [
+        {
+          id: 'commit',
+          name: 'Affirm the Bond',
+          desc: 'Fully commit to the friendship and what it means.',
+          energyCostPerTick: 0.30,
+          ticksRequired: 160,
+          requires: { cha: 20, wis: 15 },
+          reward: { happyDecayFlat: 0.02, statBonus: { wis: 3, cha: 3 } },
+          rewardText: '🤝 +3 WIS/CHA · Happiness decay significantly reduced',
+          alignment: 'paragon'
+        },
+        {
+          id: 'let_go',
+          name: 'Let Go',
+          desc: 'Choose to part ways and carry on alone.',
+          energyCostPerTick: 0.30,
+          ticksRequired: 100,
+          requires: {},
+          reward: {},
+          rewardText: 'No reward',
+          alignment: 'renegade'
+        }
+      ]
     },
   ]
 };
@@ -858,9 +1086,15 @@ function defaultState() {
     ownedEquipment: [], equippedItems: [],
     // Story state
     storyStarted: false,
-    storyStage: 0,       // index into STORY_ARC.stages
-    storyTaskProgress: 0,// tick progress on current task
+    storyStage: 0,         // index into STORY_ARC.stages
+    storyTaskProgress: 0,  // tick progress on current choice
     storyComplete: false,
+    // Alignment tracking for moral decisions
+    alignment: { paragon: 0, renegade: 0 },
+    // The currently selected choice ID for the active stage (null if none)
+    selectedChoice: null,
+    // Journal of story decisions made this loop
+    storyJournal: [],
     // Accumulated rewards from completed stages (applied live)
     storyRewards: {
       happyDecayFlat: 0,   // flat reduction to per-tick happiness drain
@@ -1009,15 +1243,22 @@ function tick() {
 
   // ── Story Task ────────────────────────────────────────────
   } else if (act === 'story_task' && stage) {
-    energyDrain = ENERGY_DRAIN_BASE * drainMult * stage.energyCostPerTick;
-    if (G.energy > 0) {
-      G.storyTaskProgress += speedMult;
-      G.activityProgress   = (G.storyTaskProgress / stage.ticksRequired) * 100;
-      if (G.storyTaskProgress >= stage.ticksRequired) completeStoryStage();
+    // Use the selected story choice to determine task cost and duration
+    const choice = getCurrentChoice();
+    if (!choice) {
+      // No choice selected — should not happen
+      energyDrain = 0;
+    } else {
+      energyDrain = ENERGY_DRAIN_BASE * drainMult * choice.energyCostPerTick;
+      if (G.energy > 0) {
+        G.storyTaskProgress += speedMult;
+        G.activityProgress   = (G.storyTaskProgress / choice.ticksRequired) * 100;
+        if (G.storyTaskProgress >= choice.ticksRequired) completeStoryStage();
+      }
+      // Story tasks cost a small happiness (social exertion) but less than work
+      let drain = HAPPY_STORY_DRAIN * decayMult - G.storyRewards.happyDecayFlat;
+      G.happiness = Math.max(HAPPY_MIN, G.happiness - Math.max(0, drain));
     }
-    // Story tasks cost a small happiness (social exertion) but less than work
-    let drain = HAPPY_STORY_DRAIN * decayMult - G.storyRewards.happyDecayFlat;
-    G.happiness = Math.max(HAPPY_MIN, G.happiness - Math.max(0, drain));
 
   // ── Training ──────────────────────────────────────────────
   } else {
@@ -1068,9 +1309,11 @@ function tick() {
 function completeStoryStage() {
   const stage = STORY_ARC.stages[G.storyStage];
   if (!stage) return;
+  const choice = getCurrentChoice();
+  if (!choice) return;
 
-  // Apply reward
-  const r = stage.reward;
+  // Apply choice reward
+  const r = choice.reward || {};
   if (r.happyDecayFlat)  G.storyRewards.happyDecayFlat += r.happyDecayFlat;
   if (r.xpMult)          G.storyRewards.xpMult         += r.xpMult;
   if (r.statBonus) {
@@ -1080,12 +1323,25 @@ function completeStoryStage() {
     }
   }
 
-  addLog(`📖 "${STORY_ARC.character}": Stage complete — ${stage.name}`, true);
-  addLog(`✨ Reward: ${stage.rewardText}`, true);
+  // Update alignment
+  if (choice.alignment === 'paragon') G.alignment.paragon = (G.alignment.paragon||0) + 1;
+  if (choice.alignment === 'renegade') G.alignment.renegade = (G.alignment.renegade||0) + 1;
 
+  // Record in journal
+  try {
+    G.storyJournal.push({ stageId: stage.id, stageName: stage.name, choiceId: choice.id, choiceName: choice.name, alignment: choice.alignment });
+  } catch (e) {}
+
+  addLog(`📖 "${STORY_ARC.character}": Stage complete — ${stage.name}`, true);
+  if (choice.rewardText && choice.rewardText !== 'No reward') {
+    addLog(`✨ Reward: ${choice.rewardText}`, true);
+  }
+  // Advance story
   G.storyStage++;
   G.storyTaskProgress = 0;
   G.activityProgress  = 0;
+  // Reset selected choice for next stage
+  G.selectedChoice = null;
 
   if (G.storyStage >= STORY_ARC.stages.length) {
     G.storyComplete = true;
@@ -1153,11 +1409,19 @@ function loadGame() {
     if (!raw) return defaultState();
     const s = JSON.parse(raw); const d = defaultState();
     const out = { ...d, ...s,
-      stats:           {...d.stats,  ...(s.stats||{})},
-      statXP:          {...d.statXP, ...(s.statXP||{})},
+      stats:           { ...d.stats,  ...(s.stats||{}) },
+      statXP:          { ...d.statXP, ...(s.statXP||{}) },
       ownedEquipment:  s.ownedEquipment  || [],
       equippedItems:   s.equippedItems   || [],
       storyRewards:    { ...d.storyRewards, ...(s.storyRewards||{}) },
+      // Merge alignment counters
+      alignment:       { ...d.alignment, ...(s.alignment||{}) },
+      // Preserve selected choice
+      selectedChoice:  s.selectedChoice !== undefined ? s.selectedChoice : d.selectedChoice,
+      // Restore journal
+      storyJournal:    Array.isArray(s.storyJournal) ? s.storyJournal : d.storyJournal,
+      // Restore center tab if present (not used yet but future-proof)
+      centerTab:       s.centerTab || d.centerTab,
     };
     if (!out.storyRewards.statBonuses) out.storyRewards.statBonuses = {};
     return out;
@@ -1185,10 +1449,12 @@ function renderLog() {
 let activeTab = 'jobs';
 function switchTab(tab) {
   activeTab = tab;
-  const tabs = ['jobs','skills','story','housing','equipment','prestige'];
+  // Update right-panel tab buttons and content. Skills tab has been removed.
+  const tabs = ['jobs','story','housing','equipment','prestige'];
   document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', tabs[i]===tab));
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('visible'));
-  document.getElementById(`tab-${tab}`).classList.add('visible');
+  const tgt = document.getElementById(`tab-${tab}`);
+  if (tgt) tgt.classList.add('visible');
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1196,11 +1462,12 @@ function switchTab(tab) {
 // ═══════════════════════════════════════════════════════════
 function setActivity(id) {
   if (id === 'story_task') {
-    const stage = getCurrentStage();
-    if (!stage) { addLog('No active story task.'); return; }
-    if (!meetsReqs(stage.requires)) {
-      const missing = Object.entries(stage.requires).map(([s,v])=>`${s.toUpperCase()} ${v}`).join(', ');
-      addLog(`Story task requires: ${missing}`); return;
+    // Ensure a choice has been selected before starting the story task
+    const choice = getCurrentChoice();
+    if (!choice) { addLog('Select a story option first.'); return; }
+    if (!meetsReqs(choice.requires)) {
+      const missing = Object.entries(choice.requires).map(([s,v])=>`${s.toUpperCase()} ${v}`).join(', ');
+      addLog(`Story option requires: ${missing}`); return;
     }
   }
   G.activity = id; G.activityProgress = 0;
@@ -1222,7 +1489,7 @@ function renderAll() {
   renderLeft();
   renderCenter();
   renderJobs();
-  renderSkills();
+  // Training is now in the center panel, so the skills tab and renderSkills are removed
   renderStoryPanel();
   renderHousing();
   renderEquipment();
@@ -1354,42 +1621,9 @@ function renderCenter() {
   const decayMult  = getDecayMult();
   const stage      = getCurrentStage();
 
-  // ── Story task card (if story active) ───────────────────
-  const sTaskSec = document.getElementById('story-task-section');
-  const sTaskEl  = document.getElementById('story-task-card');
-  if (G.storyStarted && !G.storyComplete && stage) {
-    sTaskSec.style.display = '';
-    const isActive = G.activity === 'story_task';
-    const taskPct  = isActive ? (G.storyTaskProgress / stage.ticksRequired * 100) : (G.storyTaskProgress / stage.ticksRequired * 100);
-    const reqsMet  = meetsReqs(stage.requires);
-    const reqText  = Object.entries(stage.requires).map(([s,v])=>`${s.toUpperCase()} ${v}`).join(', ');
-    const drain    = (ENERGY_DRAIN_BASE * drainMult * stage.energyCostPerTick).toFixed(2);
-    sTaskEl.innerHTML = `
-      <div class="story-task-card ${isActive?'active-story':''}" onclick="${reqsMet?`setActivity('story_task')`:''}">
-        <div class="story-task-header">
-          <span class="story-task-name">📖 ${stage.name}</span>
-          <span class="story-task-progress-label">${Math.round(taskPct)}%</span>
-        </div>
-        <div class="story-task-quote">"${stage.quote.replace(/^"|"$/g,'')}"<br><small style="color:var(--text-muted)">— ${STORY_ARC.character}</small></div>
-        <div class="act-desc">${stage.desc}</div>
-        ${reqText ? `<div class="story-task-req">Requires: <strong>${reqText}</strong></div>` : ''}
-        <div class="story-task-reward">Reward: ${stage.rewardText}</div>
-        ${!reqsMet ? `<div style="font-size:10px;color:var(--rose);margin-bottom:4px;">⚠ Requirements not yet met</div>` : ''}
-        <div class="act-meta" style="margin-bottom:4px;">−${drain} ⚡/tick · DEX speed ×${speedMult.toFixed(2)} · ${isActive?'<strong style="color:var(--pink)">Active</strong>':'Click to begin'}</div>
-        <div class="story-task-progress"><div class="story-task-progress-fill" style="width:${taskPct.toFixed(1)}%"></div></div>
-      </div>`;
-  } else if (G.storyComplete) {
-    sTaskSec.style.display = '';
-    sTaskEl.innerHTML = `<div class="story-task-card" style="border-color:var(--green-dim); background:#001209;">
-      <div class="story-task-name" style="color:var(--green);">✨ Story Complete</div>
-      <div class="act-desc" style="margin-top:6px;">Your bond with ${STORY_ARC.character} is fully forged. All rewards are active.</div>
-    </div>`;
-  } else if (G.storyStarted) {
-    sTaskSec.style.display = ''; // no stage — shouldn't happen
-    sTaskEl.innerHTML = '';
-  } else {
-    sTaskSec.style.display = 'none';
-  }
+  // ── Story content ───────────────────────────────────────
+  // Update the story content area on the Story tab. This replaces the old single-task card.
+  renderStoryCenter();
 
   // ── Work ────────────────────────────────────────────────
   const payPerTick  = getJobPay(job);
@@ -1450,6 +1684,98 @@ function renderCenter() {
       <div class="act-meta">😊 Restores +${HAPPY_REST_BASE} happiness/tick + housing · WIS adds +${wisB}/day passively</div>
       <div class="act-progress"><div class="act-progress-fill green" style="width:${G.activity==='rest'?G.activityProgress:0}%"></div></div>
     </div>`;
+}
+
+// ── Center Tab and Story Choice Helpers ─────────────────
+// Switch between Activities, Training, and Story tabs in the center panel.
+function switchCenterTab(tab) {
+  G.centerTab = tab;
+  document.querySelectorAll('.center-tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
+  });
+  document.querySelectorAll('.center-tab-content').forEach(cont => {
+    cont.classList.toggle('visible', cont.id === 'center-tab-' + tab);
+  });
+  if (tab === 'story') renderStoryCenter();
+}
+
+// Select a story choice for the current stage. Starts the story task when chosen.
+function chooseStoryChoice(choiceId) {
+  const stage = STORY_ARC.stages[G.storyStage];
+  if (!stage) return;
+  const choice = stage.choices ? stage.choices.find(c => c.id === choiceId) : null;
+  if (!choice) return;
+  if (!meetsReqs(choice.requires)) {
+    addLog(`Can't choose ${choice.name}: requirements not met.`, true);
+    return;
+  }
+  G.selectedChoice = choiceId;
+  setActivity('story_task');
+  renderStoryCenter();
+}
+
+// Get the currently selected choice object for the active story stage.
+function getCurrentChoice() {
+  const stage = STORY_ARC.stages[G.storyStage];
+  if (!stage || !stage.choices) return null;
+  return stage.choices.find(c => c.id === G.selectedChoice) || null;
+}
+
+// Render the story content within the center panel. Displays choices or progress.
+function renderStoryCenter() {
+  const el = document.getElementById('story-content');
+  // Not started
+  if (!G.storyStarted) {
+    el.innerHTML = `<div class="info-box"><strong>Story</strong> — Something is stirring. Keep living your life. The world has a way of introducing the right people at the right time.<br><br><em>Check back after a few days have passed.</em></div>`;
+    return;
+  }
+  // Completed
+  if (G.storyComplete) {
+    el.innerHTML = `<div class="info-box"><strong>Story Complete</strong><br>Your bond with ${STORY_ARC.character} is fully forged. All rewards are active.</div>`;
+    return;
+  }
+  const stage = STORY_ARC.stages[G.storyStage];
+  if (!stage) {
+    el.innerHTML = `<div class="info-box">No story stage found.</div>`;
+    return;
+  }
+  // If no choice selected, show available choices
+  if (!G.selectedChoice) {
+    const choicesHtml = stage.choices.map(choice => {
+      const reqMet = meetsReqs(choice.requires);
+      const reqText = Object.entries(choice.requires).map(([k,v])=>`${k.toUpperCase()} ${v}`).join(', ');
+      return `<div class="choice-card ${reqMet?'':'locked'}" onclick="${reqMet ? `chooseStoryChoice('${choice.id}')` : ''}">
+        <div class="choice-name">${choice.name}</div>
+        <div class="choice-desc">${choice.desc}</div>
+        ${reqText ? `<div class="choice-req">Requires: <strong>${reqText}</strong></div>` : ''}
+        <div class="choice-reward">${choice.rewardText}</div>
+        <div class="choice-align">${choice.alignment.charAt(0).toUpperCase() + choice.alignment.slice(1)}</div>
+      </div>`;
+    }).join('');
+    el.innerHTML = `<div class="story-stage">
+      <div class="story-stage-header"><strong>${stage.name}</strong></div>
+      <div class="story-stage-quote" style="font-style:italic;margin:4px 0;">${stage.quote}</div>
+      <div class="story-stage-desc" style="margin-bottom:6px;">${stage.desc}</div>
+      <div class="choices-container">${choicesHtml}</div>
+    </div>`;
+    return;
+  }
+  // Otherwise show progress on selected choice
+  const choice = getCurrentChoice();
+  if (!choice) {
+    el.innerHTML = `<div class="info-box">Invalid choice selected.</div>`;
+    return;
+  }
+  const pct = Math.min(100, (G.storyTaskProgress / choice.ticksRequired) * 100);
+  const drain = (ENERGY_DRAIN_BASE * getEnergyDrainMult() * choice.energyCostPerTick).toFixed(2);
+  const speed = getSpeedMult().toFixed(2);
+  const reqMet = meetsReqs(choice.requires);
+  el.innerHTML = `<div class="choice-progress-card ${G.activity==='story_task'?'active':''}" onclick="${reqMet ? `setActivity('story_task')` : ''}">
+    <div class="choice-name">${choice.name}</div>
+    <div class="choice-desc">${choice.desc}</div>
+    <div class="choice-progress-bar"><div class="choice-progress-fill" style="width:${pct}%"></div></div>
+    <div class="choice-meta">${pct.toFixed(0)}% complete · −${drain} ⚡/tick · DEX speed ×${speed}</div>
+  </div>`;
 }
 
 // ── RIGHT: JOBS ───────────────────────────────────────────
@@ -1519,6 +1845,24 @@ function renderStoryPanel() {
       rLines.map(r=>`<div class="reward-row${r.active?'':' inactive'}">✓ ${r.text}</div>`).join('') + `</div>`
     : '';
 
+  // Alignment summary
+  const alignHtml = `<div class="align-summary" style="margin:8px 0; font-size:11px; color:var(--text-mid);">
+    <strong>Alignment</strong> — Paragon: <span style="color:var(--teal)">${G.alignment.paragon}</span> · Renegade: <span style="color:var(--rose)">${G.alignment.renegade}</span>
+  </div>`;
+
+  // Story journal listing
+  let journalHtml = '';
+  if (G.storyJournal && G.storyJournal.length > 0) {
+    journalHtml = `<div class="story-journal" style="margin-top:10px;"><div class="rewards-title">Journal</div>` +
+      G.storyJournal.slice(-10).map(entry => {
+        const al = entry.alignment;
+        const alColor = al === 'paragon' ? 'var(--teal)' : al === 'renegade' ? 'var(--rose)' : 'var(--text-mid)';
+        return `<div class="journal-row" style="font-size:11px;margin-bottom:4px;">
+          <span style="color:var(--text-bright)">${entry.stageName}</span>: <span style="color:var(--amber)">${entry.choiceName}</span> — <span style="color:${alColor}">${al.charAt(0).toUpperCase()+al.slice(1)}</span>
+        </div>`;
+      }).join('') + `</div>`;
+  }
+
   const stagesHtml = STORY_ARC.stages.map((s, i) => {
     const done    = i < G.storyStage;
     const current = i === G.storyStage && !G.storyComplete;
@@ -1529,8 +1873,19 @@ function renderStoryPanel() {
     if (locked)  cls += ' locked-stage';
     const statusLabel = done ? 'Done' : current ? 'Active' : 'Locked';
     const statusCls   = done ? 'done' : current ? 'active' : 'pending';
-    const reqTxt = Object.entries(s.requires).map(([k,v])=>`${k.toUpperCase()} ${v}`).join(', ');
-    const tpct = current ? (G.storyTaskProgress/s.ticksRequired*100).toFixed(0) : done ? 100 : 0;
+    // Determine a representative reward text from the first choice (if any)
+    let rewardText = '';
+    if (s.choices && s.choices.length > 0) {
+      rewardText = s.choices[0].rewardText;
+    }
+    // Compute progress percentage based on selected choice for current stage
+    let tpct = 0;
+    if (current) {
+      const c = getCurrentChoice();
+      if (c) tpct = (G.storyTaskProgress / c.ticksRequired * 100).toFixed(0);
+    } else if (done) {
+      tpct = 100;
+    }
     return `<div class="${cls}">
       <div class="stage-header">
         <span class="stage-num">Stage ${i+1}</span>
@@ -1538,12 +1893,11 @@ function renderStoryPanel() {
       </div>
       <div class="stage-name">${s.name}</div>
       <div class="stage-desc">${s.desc}</div>
-      ${reqTxt ? `<div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;">Requires: ${reqTxt}</div>` : ''}
-      <span class="stage-reward-pill ${done?'done-reward':''}">${s.rewardText}</span>
+      ${rewardText ? `<span class="stage-reward-pill ${done?'done-reward':''}">${rewardText}</span>` : ''}
       ${(current||done) ? `
         <div style="margin-top:6px;">
           <div class="bar-track" style="height:4px;"><div class="bar-fill" style="width:${tpct}%;background:${done?'var(--green)':'var(--pink)'};"></div></div>
-          <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">${done?'Complete':tpct+'% — select "Story Task" in Activities'}</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">${done?'Complete':tpct+'% — select \"Story Task\" in Activities'}</div>
         </div>` : ''}
     </div>`;
   }).join('');
@@ -1558,8 +1912,10 @@ function renderStoryPanel() {
       </div>
       <div class="arc-progress-track"><div class="arc-progress-fill" style="width:${arcPct}%"></div></div>
     </div>
+    ${alignHtml}
     ${rewardHtml}
-    ${stagesHtml}`;
+    ${stagesHtml}
+    ${journalHtml}`;
 }
 
 // ── RIGHT: HOUSING ────────────────────────────────────────
