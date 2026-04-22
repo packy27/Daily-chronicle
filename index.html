@@ -1149,14 +1149,31 @@ const SKILLS = [
   { id:'rhetoric',   name:'Rhetoric',       stat:'cha', rate:1.0, cost:0.7, req:{int:10}, desc:'Practice speaking and persuasion.' },
 ];
 
+// ── Training Tier System ─────────────────────────────────────────────────
+// Each training skill scales in difficulty based on the player's current
+// level in the associated stat. Tiers encourage balanced builds and mirror
+// the increasing rigor of academy coursework. Thresholds define the
+// starting level for tiers 2–4. Multipliers scale the energy cost per
+// tick for skills in each tier.
+const TIER_THRESHOLDS   = [25, 50, 75];
+const TIER_MULTIPLIERS  = [1.0, 1.4, 1.8, 2.3];
+
+function getTrainingTier(statName) {
+  const val = G.stats && G.stats[statName] ? G.stats[statName] : 0;
+  if (val < TIER_THRESHOLDS[0]) return 1;
+  if (val < TIER_THRESHOLDS[1]) return 2;
+  if (val < TIER_THRESHOLDS[2]) return 3;
+  return 4;
+}
+
 // ═══════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════
-// Use a versioned save key per iteration to avoid carrying forward stale data
-// Iteration 7 introduces a new save format with additional fields (loopCount,
-// currentYear, relationshipData, activeActions, etc.). Using a new save key
-// ensures that older saves are ignored and a fresh state is used instead.
-const SAVE_KEY = 'chronicle_save_v7';
+// Use a versioned save key per iteration to avoid carrying forward stale data.
+// Iteration 8 introduces a new save format with additional fields and more
+// aggressive state clearing. A new save key ensures that older saves are
+// ignored and a fresh state is used instead.
+const SAVE_KEY = 'chronicle_save_v8';
 
 function defaultState() {
   return {
@@ -1203,6 +1220,15 @@ function defaultState() {
       xpMult: 0,           // additive bonus to XP multiplier
       statBonuses: {},     // permanent stat additions
     },
+
+    // Narrative phase tracking. As the long-loop academy story unfolds, the
+    // game will progress through several high‑level phases (e.g. Survival,
+    // Optimization, Discovery). Only a placeholder is used for now. The
+    // phase can advance as story milestones are completed, and progress can
+    // be used to gate new content. A simple numeric progress value (0–100)
+    // accompanies the phase for future UI.
+    storyPhase: 'Survival',
+    storyPhaseProgress: 0,
 
     // Relationship data scaffold. Each character key holds the current
     // relationship level for the loop, the maximum level achieved across
@@ -1295,9 +1321,15 @@ function getTotalActionDrain() {
     } else if (act === 'rest') {
       // rest does not drain energy; regen handled separately
     } else {
+      // Training actions: adjust energy cost by tier multiplier based on the
+      // player's current level in the skill's stat. Higher tiers cost more
+      // energy, encouraging balanced stat growth. Tier multipliers are
+      // defined in TIER_MULTIPLIERS. See getTrainingTier() for details.
       const skill = SKILLS.find(s => s.id === act);
       if (skill) {
-        total += ENERGY_DRAIN_BASE * drainMult * skill.cost;
+        const tier = getTrainingTier(skill.stat);
+        const mult = TIER_MULTIPLIERS[tier - 1] || 1.0;
+        total += ENERGY_DRAIN_BASE * drainMult * skill.cost * mult;
       }
     }
   }
@@ -1527,6 +1559,23 @@ function completeStoryStage() {
   if (choice.alignment === 'paragon') G.alignment.paragon = (G.alignment.paragon||0) + 1;
   if (choice.alignment === 'renegade') G.alignment.renegade = (G.alignment.renegade||0) + 1;
 
+  // Increase relationship level for the story character. Each completed stage
+  // strengthens the bond with the character associated with this story arc. If
+  // the relationship does not yet exist in relationshipData, it will be
+  // created on demand. The level persists only within the current loop but
+  // updates maxLevel when higher than any previous loops.
+  try {
+    const key = (STORY_ARC.character || '').toLowerCase();
+    if (!G.relationshipData[key]) {
+      G.relationshipData[key] = { level: 0, maxLevel: 0, milestones: [], image: 'placeholder_light_gray_block.png', description: '' };
+    }
+    const rel = G.relationshipData[key];
+    rel.level = (rel.level || 0) + 1;
+    if (rel.level > (rel.maxLevel || 0)) {
+      rel.maxLevel = rel.level;
+    }
+  } catch(e){}
+
   // Record in journal
   try {
     G.storyJournal.push({ stageId: stage.id, stageName: stage.name, choiceId: choice.id, choiceName: choice.name, alignment: choice.alignment });
@@ -1604,14 +1653,34 @@ function hardReset() {
   // story progress, relationships and prestige. It will not delete
   // persistent rewards from future versions.
   if (!confirm('Reset all progress including prestige?')) return;
-  localStorage.removeItem(SAVE_KEY);
-  G = defaultState();
-  renderAll();
-  addLog('All progress erased. A new journey begins.', true);
+  // Remove all versions of chronicle saves to ensure no stale data remains
+  try {
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith('chronicle_save')) {
+        localStorage.removeItem(key);
+      }
+    }
+  } catch(e){}
+  // Reset in-memory state and fully reload the page. A full reload
+  // guarantees that no lingering state persists and that initialization
+  // routines run fresh.
+  G = null;
+  location.reload();
 }
 function saveGame() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(G)); } catch(e){} }
 function loadGame() {
   try {
+    // Before loading, purge any legacy saves from previous iterations. This
+    // prevents stale or incompatible data from polluting the current game. Any
+    // key beginning with "chronicle_save" (except the current SAVE_KEY) is
+    // removed.  This runs once at load time before reading the state.
+    try {
+      for (const key of Object.keys(localStorage)) {
+        if (key.startsWith('chronicle_save') && key !== SAVE_KEY) {
+          localStorage.removeItem(key);
+        }
+      }
+    } catch(e) { /* safe to ignore */ }
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return defaultState();
     const s = JSON.parse(raw); const d = defaultState();
@@ -1900,7 +1969,12 @@ function renderCenter() {
     const locked = !meetsReqs(skill.req);
     // A training action is active if it is present in the activeActions array
     const active = G.activeActions && G.activeActions.includes(skill.id);
-    const td     = (ENERGY_DRAIN_BASE * drainMult * skill.cost).toFixed(2);
+    // Determine the tier based on the player's current stat level and apply
+    // the corresponding multiplier to the energy cost per tick. Tier values
+    // are defined in TIER_MULTIPLIERS; getTrainingTier() returns 1–4.
+    const tier   = getTrainingTier(skill.stat);
+    const tmult  = TIER_MULTIPLIERS[tier - 1] || 1.0;
+    const td     = (ENERGY_DRAIN_BASE * drainMult * skill.cost * tmult).toFixed(2);
     const reqTxt = locked ? Object.entries(skill.req).map(([k,v])=>`${k.toUpperCase()} ${v}`).join(', ')+' required' : '';
     const ibPct  = Math.round((getIntXpMult()-1)*100);
     const eqPct  = Math.round(getEquipXpBonus(skill.stat)*100);
@@ -1909,7 +1983,7 @@ function renderCenter() {
       <div class="activity-card ${active?'active teal-act':''} ${locked?'locked-card':''}"
            onclick="${locked?'':  `toggleAction('${skill.id}')`}">
         <div class="act-header">
-          <span class="act-name">${skill.name}</span>
+          <span class="act-name">${skill.name} <span style="color:var(--text-dim);font-size:10px;">[T${tier}]</span></span>
           <span class="act-cost">−${td} ⚡/tick</span>
         </div>
         <div class="act-desc">${skill.desc}${reqTxt?' · <em>'+reqTxt+'</em>':''} · <span class="c-${skill.stat}">+${skill.stat.toUpperCase()} XP</span></div>
