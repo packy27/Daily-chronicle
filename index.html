@@ -82,6 +82,77 @@
   display: block;
 }
 
+/* ── Quick Actions Bar ─────────────────────────────────── */
+.quick-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 8px 0 12px;
+}
+.quick-actions .qa-btn {
+  padding: 4px 8px;
+  font-size: 11px;
+  border-radius: var(--r-sm);
+  background: var(--bg-card);
+  color: var(--text-bright);
+  cursor: pointer;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+  transition: background 0.1s, border-color 0.1s;
+}
+.quick-actions .qa-btn:hover {
+  background: var(--bg-hover);
+}
+.quick-actions .qa-btn.active {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: #fff;
+}
+.quick-actions .qa-btn.qa-rest.active {
+  background: var(--green);
+  border-color: var(--green);
+}
+
+/* ── Relationships ───────────────────────────────────────── */
+.relationship-card {
+  display: flex;
+  align-items: flex-start;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 6px;
+  margin-bottom: 8px;
+  cursor: default;
+}
+.relationship-card .rel-img {
+  width: 48px;
+  height: 48px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: var(--r-sm);
+  margin-right: 8px;
+}
+.relationship-card .rel-info {
+  flex: 1;
+}
+.relationship-card .rel-name {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-bright);
+  margin-bottom: 2px;
+}
+.relationship-card .rel-level {
+  font-size: 11px;
+  color: var(--text-mid);
+  margin-bottom: 4px;
+}
+.relationship-card .rel-desc {
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.35;
+}
+
 /* ── Story Choice Cards ──────────────────────────────────── */
 .choice-card {
   background: var(--bg-card);
@@ -545,6 +616,8 @@ header {
     <div class="header-meta">
       <span class="age-chip">Age <span class="age-val" id="hdr-age">18</span></span>
       <span class="age-chip">Day <span class="age-val" id="hdr-day">1</span></span>
+      <span class="age-chip">Year <span class="age-val" id="hdr-year">1</span></span>
+      <span class="age-chip">Loop <span class="age-val" id="hdr-loop">0</span></span>
       <span class="age-chip" id="hdr-upkeep" style="color:var(--rose);display:none;"></span>
       <span class="age-chip" id="hdr-happy"  style="display:none;"></span>
       <span class="prestige-badge" id="prestige-badge" style="display:none;"></span>
@@ -682,6 +755,9 @@ header {
           <button class="center-tab-btn" data-tab="training" onclick="switchCenterTab('training')">Training</button>
           <button class="center-tab-btn" data-tab="story" onclick="switchCenterTab('story')">Story</button>
         </div>
+
+        <!-- Quick actions bar (always visible across tabs) -->
+        <div id="quick-actions" class="quick-actions"></div>
         <!-- Activities tab content -->
         <div id="center-tab-activities" class="center-tab-content visible">
           <div class="info-box" id="activities-info-box" style="margin:0 0 10px 0;">
@@ -713,6 +789,7 @@ header {
         <button class="tab-btn"         onclick="switchTab('story')">Story</button>
         <button class="tab-btn"         onclick="switchTab('housing')">Housing</button>
         <button class="tab-btn"         onclick="switchTab('equipment')">Gear</button>
+        <button class="tab-btn"         onclick="switchTab('relationships')">Relationships</button>
         <button class="tab-btn"         onclick="switchTab('prestige')">Legacy</button>
       </div>
 
@@ -730,6 +807,11 @@ header {
       <div class="tab-content" id="tab-equipment">
         <div class="info-box"><strong>Equipment</strong> provides bonuses while equipped. Each item has a daily maintenance fee.</div>
         <div id="equipment-list"></div>
+      </div>
+      <!-- RELATIONSHIPS TAB -->
+      <div class="tab-content" id="tab-relationships">
+        <div class="info-box"><strong>Relationships</strong> — Over the course of many loops you will meet and befriend classmates and mentors. Their stories evolve across loops and offer unique bonuses. (Feature under construction)</div>
+        <div id="relationships-list"></div>
       </div>
       <div class="tab-content" id="tab-prestige">
         <div class="prestige-wrap">
@@ -1070,16 +1152,36 @@ const SKILLS = [
 // ═══════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════
-const SAVE_KEY = 'chronicle_save_v5';
+// Use a versioned save key per iteration to avoid carrying forward stale data
+// Iteration 7 introduces a new save format with additional fields (loopCount,
+// currentYear, relationshipData, activeActions, etc.). Using a new save key
+// ensures that older saves are ignored and a fresh state is used instead.
+const SAVE_KEY = 'chronicle_save_v7';
 
 function defaultState() {
   return {
-    tick: 0, dayTick: 0, age: 18, day: 1, money: 0,
-    energy: 100, happiness: 50,
+    tick: 0, dayTick: 0, age: 18,
+    // The day of the current year (1–?), separate from the total tick count
+    day: 1,
+    // Track progression across loops. Each loop represents a four‑year term at
+    // the academy. loopCount increments whenever a loop ends due to death,
+    // expulsion or graduation. currentYear tracks which year of the academy
+    // (1–4) the player is currently in. These values reset the in‑loop state
+    // but persist across loops for future systems.
+    loopCount: 0,
+    currentYear: 1,
+    money: 0,
+    energy: 100,
+    happiness: 50,
     housingTier: 0,
     stats:  {str:0,dex:0,con:0,int:0,wis:0,cha:0},
     statXP: {str:0,dex:0,con:0,int:0,wis:0,cha:0},
-    activity: 'rest', activityProgress: 0,
+    // The active actions the player has toggled on. A maximum of two actions
+    // may be active at once. When empty, the character will be considered
+    // idle/resting. Each action id corresponds to a work, study or training
+    // identifier (e.g. 'work', 'body', etc.).
+    activeActions: [],
+    activityProgress: 0,
     activityStreak: 0,   // consecutive ticks on same non-rest activity
     jobId: 'scavenger',
     prestigeCount: 0, totalEarned: 0,
@@ -1100,6 +1202,22 @@ function defaultState() {
       happyDecayFlat: 0,   // flat reduction to per-tick happiness drain
       xpMult: 0,           // additive bonus to XP multiplier
       statBonuses: {},     // permanent stat additions
+    },
+
+    // Relationship data scaffold. Each character key holds the current
+    // relationship level for the loop, the maximum level achieved across
+    // all loops, and a list of milestone objects. This will be used in
+    // future iterations to drive the relationship tab and recollection
+    // mechanics. At present only a placeholder character (Mira) is
+    // provided.
+    relationshipData: {
+      mira: {
+        level: 0,
+        maxLevel: 0,
+        milestones: [],
+        image: 'placeholder_light_gray_block.png',
+        description: 'A fellow student. Get to know her as your journey unfolds.'
+      }
     },
   };
 }
@@ -1157,6 +1275,35 @@ function getEquipEarningsBonus(cat) {
   return m;
 }
 
+// Compute the total energy drain per tick based on currently active actions.
+// Returns 0 if no actions are active or if only rest is selected. The drain
+// multiplier is applied inside this function so that render functions can
+// display the true per-tick drain.
+function getTotalActionDrain() {
+  if (!Array.isArray(G.activeActions) || G.activeActions.length === 0) return 0;
+  const drainMult = getEnergyDrainMult();
+  let total = 0;
+  for (const act of G.activeActions) {
+    if (act === 'work') {
+      total += ENERGY_DRAIN_BASE * drainMult;
+    } else if (act === 'story_task') {
+      const stage = getCurrentStage();
+      const choice = getCurrentChoice();
+      if (stage && choice) {
+        total += ENERGY_DRAIN_BASE * drainMult * choice.energyCostPerTick;
+      }
+    } else if (act === 'rest') {
+      // rest does not drain energy; regen handled separately
+    } else {
+      const skill = SKILLS.find(s => s.id === act);
+      if (skill) {
+        total += ENERGY_DRAIN_BASE * drainMult * skill.cost;
+      }
+    }
+  }
+  return total;
+}
+
 function getJob()  { return JOBS.find(j=>j.id===G.jobId) || JOBS[0]; }
 function getStat(s){ return G.stats[s] || 0; }
 function meetsReqs(req) { for(const[s,v] of Object.entries(req)) if(getStat(s)<v) return false; return true; }
@@ -1183,7 +1330,9 @@ function isStoryActivity(act) { return act === 'story_task'; }
 // TICK ENGINE
 // ═══════════════════════════════════════════════════════════
 function tick() {
-  G.tick++; G.dayTick++;
+  // Increment universal tick counters
+  G.tick++;
+  G.dayTick++;
 
   const maxEnergy = getMaxEnergy();
   const housing   = getHousing();
@@ -1194,103 +1343,154 @@ function tick() {
 
   // ── Day boundary ───────────────────────────────────────────
   if (G.dayTick >= TICKS_PER_DAY) {
-    G.dayTick = 0; G.day++;
+    G.dayTick = 0;
+    G.day++;
+    // Update age linearly with days; year increment handling will be added in later iterations
     G.age = 18 + (G.day - 1) / DAYS_PER_YEAR;
+    // Upkeep: subtract housing and equipment upkeep once per day
     const upkeep = getTotalUpkeep();
     if (upkeep > 0) G.money = Math.max(0, G.money - upkeep);
+    // Birthday notification
     const af = Math.floor(G.age);
-    if (Math.abs(G.age - af) < 1.2/DAYS_PER_YEAR) addLog(`You turn ${af}. Life marches forward.`);
+    if (Math.abs(G.age - af) < 1.2 / DAYS_PER_YEAR) addLog(`You turn ${af}. Life marches forward.`);
+
+    // ── Year boundary ─────────────────────────────────────────
+    // When the day counter exceeds the number of days in a year, advance the currentYear.
+    if (G.day > DAYS_PER_YEAR) {
+      G.day = 1;
+      G.currentYear = (G.currentYear || 1) + 1;
+      // If the current year exceeds 4, start a new loop. This resets most
+      // temporary state while preserving core progression. See startNewLoop() for details.
+      if (G.currentYear > 4) {
+        G.loopCount = (G.loopCount || 0) + 1;
+        startNewLoop();
+        // startNewLoop resets currentYear to 1 and other state, so return to avoid further tick logic
+        return;
+      }
+    }
   }
 
-  const act = G.activity;
-  let energyDrain = 0;
-  const progInc = (100 / TICKS_PER_DAY) * speedMult;
+  // Determine actions for this tick. If energy is depleted or no actions
+  // selected, the character rests automatically. Otherwise process
+  // each selected action in sequence.
+  let actions = Array.isArray(G.activeActions) ? G.activeActions.slice() : [];
+  let autoRest = false;
+  if (G.energy <= 0) {
+    autoRest = true;
+    actions = [];
+  }
+  if (actions.length === 0) autoRest = true;
+
+  // Choose the primary action for streak tracking (first non‑rest)
+  let primaryAct = actions.find(a => a !== 'rest');
+  if (!primaryAct) primaryAct = 'rest';
 
   // ── Streak tracking ────────────────────────────────────────
-  if (act !== 'rest' && act !== G._lastActivity) {
+  if (primaryAct !== 'rest' && primaryAct !== G._lastActivity) {
     G.activityStreak = 0;
   }
-  G._lastActivity = act;
-  if (act !== 'rest') G.activityStreak = (G.activityStreak || 0) + 1;
-  else G.activityStreak = 0;
-
+  G._lastActivity = primaryAct;
+  if (primaryAct !== 'rest') {
+    G.activityStreak = (G.activityStreak || 0) + 1;
+  } else {
+    G.activityStreak = 0;
+  }
   const isOnStreak = G.activityStreak > HAPPY_STREAK_THRESHOLD;
 
-  // ── Work ──────────────────────────────────────────────────
-  if (act === 'work') {
-    const job = getJob();
-    const pay = getJobPay(job);
-    G.money += pay; G.totalEarned += pay;
-    energyDrain = ENERGY_DRAIN_BASE * drainMult;
-    const im = getIntXpMult();
-    for (const [s, r] of Object.entries(job.pStats||{})) {
-      gainXP(s, r * JOB_STAT_RATE * im * (1 + getEquipXpBonus(s)) * getLegacy());
-    }
-    G.activityProgress = (G.activityProgress + progInc) % 100;
+  // The progress increment used for all actions
+  const progInc = (100 / TICKS_PER_DAY) * speedMult;
 
-    // Happiness drain — work + streak
-    let drain = HAPPY_WORK_DRAIN * decayMult;
-    if (isOnStreak) drain += HAPPY_STREAK_PENALTY * decayMult;
-    drain -= G.storyRewards.happyDecayFlat; // relationship reward offsets
-    G.happiness = Math.max(HAPPY_MIN, G.happiness - Math.max(0, drain));
+  let energyDrainTotal = 0;
+  let didWork = false;
 
-  // ── Rest ──────────────────────────────────────────────────
-  } else if (act === 'rest') {
+  // ── Rest handling ─────────────────────────────────────────
+  if (autoRest) {
+    // Gain energy and happiness while resting
     G.energy = Math.min(maxEnergy, G.energy + getEnergyRegenRate());
     G.activityProgress = (G.activityProgress + progInc) % 100;
     const wisBonus = G.stats.wis * HAPPY_WIS_REGEN_BONUS;
     G.happiness = Math.min(100, G.happiness + HAPPY_REST_BASE + housing.happyTickBonus + wisBonus);
-
-  // ── Story Task ────────────────────────────────────────────
-  } else if (act === 'story_task' && stage) {
-    // Use the selected story choice to determine task cost and duration
-    const choice = getCurrentChoice();
-    if (!choice) {
-      // No choice selected — should not happen
-      energyDrain = 0;
-    } else {
-      energyDrain = ENERGY_DRAIN_BASE * drainMult * choice.energyCostPerTick;
-      if (G.energy > 0) {
-        G.storyTaskProgress += speedMult;
-        G.activityProgress   = (G.storyTaskProgress / choice.ticksRequired) * 100;
-        if (G.storyTaskProgress >= choice.ticksRequired) completeStoryStage();
-      }
-      // Story tasks cost a small happiness (social exertion) but less than work
-      let drain = HAPPY_STORY_DRAIN * decayMult - G.storyRewards.happyDecayFlat;
-      G.happiness = Math.max(HAPPY_MIN, G.happiness - Math.max(0, drain));
-    }
-
-  // ── Training ──────────────────────────────────────────────
   } else {
-    const skill = SKILLS.find(s=>s.id===act);
-    if (skill) {
-      energyDrain = ENERGY_DRAIN_BASE * drainMult * skill.cost;
-      if (G.energy > 0) {
-        const xpGain = skill.rate * getIntXpMult() * (1+getEquipXpBonus(skill.stat)) * getLegacy();
-        gainXP(skill.stat, xpGain);
+    // Process each action
+    for (const act of actions) {
+      // Exclusive: story task
+      if (act === 'story_task' && stage) {
+        const choice = getCurrentChoice();
+        if (choice) {
+          const eDrain = ENERGY_DRAIN_BASE * drainMult * choice.energyCostPerTick;
+          energyDrainTotal += eDrain;
+          if (G.energy > 0) {
+            G.storyTaskProgress += speedMult;
+            G.activityProgress   = (G.storyTaskProgress / choice.ticksRequired) * 100;
+            if (G.storyTaskProgress >= choice.ticksRequired) completeStoryStage();
+          }
+          let hDrain = HAPPY_STORY_DRAIN * decayMult - G.storyRewards.happyDecayFlat;
+          G.happiness = Math.max(HAPPY_MIN, G.happiness - Math.max(0, hDrain));
+          didWork = true;
+        }
+        // Story task overrides other actions
+        break;
       }
-      G.activityProgress = (G.activityProgress + progInc) % 100;
-      let drain = HAPPY_TRAIN_DRAIN * decayMult;
-      if (isOnStreak) drain += HAPPY_STREAK_PENALTY * decayMult;
-      drain -= G.storyRewards.happyDecayFlat;
-      G.happiness = Math.max(HAPPY_MIN, G.happiness - Math.max(0, drain));
+      // Work
+      if (act === 'work') {
+        const job = getJob();
+        const pay = getJobPay(job);
+        G.money += pay; G.totalEarned += pay;
+        const eDrain = ENERGY_DRAIN_BASE * drainMult;
+        energyDrainTotal += eDrain;
+        const im = getIntXpMult();
+        for (const [s, r] of Object.entries(job.pStats||{})) {
+          gainXP(s, r * JOB_STAT_RATE * im * (1 + getEquipXpBonus(s)) * getLegacy());
+        }
+        G.activityProgress = (G.activityProgress + progInc) % 100;
+        let hDrain = HAPPY_WORK_DRAIN * decayMult;
+        if (isOnStreak) hDrain += HAPPY_STREAK_PENALTY * decayMult;
+        hDrain -= G.storyRewards.happyDecayFlat;
+        G.happiness = Math.max(HAPPY_MIN, G.happiness - Math.max(0, hDrain));
+        didWork = true;
+        continue;
+      }
+      // Rest action if explicitly selected
+      if (act === 'rest') {
+        G.energy = Math.min(maxEnergy, G.energy + getEnergyRegenRate());
+        G.activityProgress = (G.activityProgress + progInc) % 100;
+        const wisBonus = G.stats.wis * HAPPY_WIS_REGEN_BONUS;
+        G.happiness = Math.min(100, G.happiness + HAPPY_REST_BASE + housing.happyTickBonus + wisBonus);
+        continue;
+      }
+      // Training (skills)
+      const skill = SKILLS.find(s=>s.id===act);
+      if (skill) {
+        const eDrain = ENERGY_DRAIN_BASE * drainMult * skill.cost;
+        energyDrainTotal += eDrain;
+        if (G.energy > 0) {
+          const xpGain = skill.rate * getIntXpMult() * (1+getEquipXpBonus(skill.stat)) * getLegacy();
+          gainXP(skill.stat, xpGain);
+        }
+        G.activityProgress = (G.activityProgress + progInc) % 100;
+        let hDrain = HAPPY_TRAIN_DRAIN * decayMult;
+        if (isOnStreak) hDrain += HAPPY_STREAK_PENALTY * decayMult;
+        hDrain -= G.storyRewards.happyDecayFlat;
+        G.happiness = Math.max(HAPPY_MIN, G.happiness - Math.max(0, hDrain));
+        didWork = true;
+      }
     }
   }
 
   // ── Passive background decay ───────────────────────────────
-  // Always active — keeps happiness from sitting idle at max
   let passiveDecay = HAPPY_IDLE_DECAY * decayMult - (G.storyRewards.happyDecayFlat * 0.5);
-  if (act !== 'rest') {
+  if (didWork) {
     passiveDecay += housing.happyDecayBonus * decayMult;
   }
   G.happiness = Math.max(HAPPY_MIN, G.happiness - Math.max(0, passiveDecay));
   G.happiness = Math.min(100, G.happiness);
 
   // ── Energy drain ──────────────────────────────────────────
-  if (energyDrain > 0) {
-    G.energy = Math.max(0, G.energy - energyDrain);
-    if (G.energy <= 0 && act !== 'rest') {
-      G.activity = 'rest'; G.activityProgress = 0;
+  if (energyDrainTotal > 0) {
+    G.energy = Math.max(0, G.energy - energyDrainTotal);
+    if (G.energy <= 0) {
+      // Exhausted: clear active actions and rest
+      G.activeActions = [];
       addLog('Exhausted — forced to rest.', false);
     }
   }
@@ -1399,8 +1599,15 @@ function doPrestige() {
   saveGame(); renderAll();
 }
 function hardReset() {
+  // Confirm with the player before wiping their progress. Resetting will
+  // completely remove all saved data for this version, including stats,
+  // story progress, relationships and prestige. It will not delete
+  // persistent rewards from future versions.
   if (!confirm('Reset all progress including prestige?')) return;
-  localStorage.removeItem(SAVE_KEY); G = defaultState(); renderAll(); addLog('All progress erased.');
+  localStorage.removeItem(SAVE_KEY);
+  G = defaultState();
+  renderAll();
+  addLog('All progress erased. A new journey begins.', true);
 }
 function saveGame() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(G)); } catch(e){} }
 function loadGame() {
@@ -1408,20 +1615,44 @@ function loadGame() {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return defaultState();
     const s = JSON.parse(raw); const d = defaultState();
-    const out = { ...d, ...s,
-      stats:           { ...d.stats,  ...(s.stats||{}) },
-      statXP:          { ...d.statXP, ...(s.statXP||{}) },
-      ownedEquipment:  s.ownedEquipment  || [],
-      equippedItems:   s.equippedItems   || [],
-      storyRewards:    { ...d.storyRewards, ...(s.storyRewards||{}) },
+    const out = {
+      ...d,
+      ...s,
+      // Deep merge nested structures to preserve defaults when missing in save
+      stats:          { ...d.stats,   ...(s.stats||{}) },
+      statXP:         { ...d.statXP,  ...(s.statXP||{}) },
+      ownedEquipment: s.ownedEquipment  || [],
+      equippedItems:  s.equippedItems   || [],
+      storyRewards:   { ...d.storyRewards, ...(s.storyRewards||{}) },
       // Merge alignment counters
-      alignment:       { ...d.alignment, ...(s.alignment||{}) },
-      // Preserve selected choice
-      selectedChoice:  s.selectedChoice !== undefined ? s.selectedChoice : d.selectedChoice,
+      alignment:      { ...d.alignment,  ...(s.alignment||{}) },
+      // Restore selected choice
+      selectedChoice: s.selectedChoice !== undefined ? s.selectedChoice : d.selectedChoice,
       // Restore journal
-      storyJournal:    Array.isArray(s.storyJournal) ? s.storyJournal : d.storyJournal,
+      storyJournal:   Array.isArray(s.storyJournal) ? s.storyJournal : d.storyJournal,
       // Restore center tab if present (not used yet but future-proof)
-      centerTab:       s.centerTab || d.centerTab,
+      centerTab:      s.centerTab || d.centerTab,
+      // Restore loopCount and currentYear
+      loopCount:      s.loopCount !== undefined ? s.loopCount : d.loopCount,
+      currentYear:    s.currentYear !== undefined ? s.currentYear : d.currentYear,
+      // Restore relationship data: deep merge each character's fields so that
+      // default properties like image and description are preserved when missing in save.
+      relationshipData: (() => {
+        const rel = {};
+        // Copy default characters
+        for (const key of Object.keys(d.relationshipData)) {
+          rel[key] = { ...d.relationshipData[key] };
+        }
+        // Merge saved data per character
+        if (s.relationshipData) {
+          for (const [key, val] of Object.entries(s.relationshipData)) {
+            rel[key] = { ...(rel[key] || {}), ...val };
+          }
+        }
+        return rel;
+      })(),
+      // Restore active actions array
+      activeActions: Array.isArray(s.activeActions) ? s.activeActions.slice() : d.activeActions,
     };
     if (!out.storyRewards.statBonuses) out.storyRewards.statBonuses = {};
     return out;
@@ -1450,7 +1681,7 @@ let activeTab = 'jobs';
 function switchTab(tab) {
   activeTab = tab;
   // Update right-panel tab buttons and content. Skills tab has been removed.
-  const tabs = ['jobs','story','housing','equipment','prestige'];
+  const tabs = ['jobs','story','housing','equipment','relationships','prestige'];
   document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', tabs[i]===tab));
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('visible'));
   const tgt = document.getElementById(`tab-${tab}`);
@@ -1470,9 +1701,17 @@ function setActivity(id) {
       addLog(`Story option requires: ${missing}`); return;
     }
   }
-  G.activity = id; G.activityProgress = 0;
-  if (id !== 'story_task') G.storyTaskProgress = G.storyTaskProgress; // preserve
-  renderAll();
+  // Legacy function retained for compatibility. Instead of switching a single
+  // activity, the new system toggles actions via toggleAction(). Only story
+  // tasks remain single‑action and override the activeActions list.
+  if (id === 'story_task') {
+    // Clear any existing actions and set story as the sole action
+    G.activeActions = ['story_task'];
+    G.activityProgress = 0;
+    renderAll();
+  } else {
+    toggleAction(id);
+  }
 }
 function selectJob(id) {
   const job = JOBS.find(j=>j.id===id); if(!job||!meetsReqs(job.req)) return;
@@ -1493,6 +1732,7 @@ function renderAll() {
   renderStoryPanel();
   renderHousing();
   renderEquipment();
+  renderRelationships();
   renderPrestige();
 }
 
@@ -1505,6 +1745,9 @@ function renderLeft() {
   // Header
   document.getElementById('hdr-age').textContent = Math.floor(G.age);
   document.getElementById('hdr-day').textContent = G.day;
+  // Show current year (1–4) and loop count
+  document.getElementById('hdr-year').textContent = G.currentYear || 1;
+  document.getElementById('hdr-loop').textContent = G.loopCount || 0;
   const upkeep = getTotalUpkeep();
   const hdrUp = document.getElementById('hdr-upkeep');
   if (upkeep>0) { hdrUp.style.display=''; hdrUp.textContent=`−$${upkeep.toFixed(2)}/day`; }
@@ -1529,8 +1772,9 @@ function renderLeft() {
   const ePct = (G.energy/maxE*100).toFixed(1);
   document.getElementById('energy-val').textContent = `${Math.floor(G.energy)}/${maxE}`;
   document.getElementById('energy-bar').style.width = ePct+'%';
+  const totalDrain = getTotalActionDrain();
   document.getElementById('energy-detail').textContent =
-    `Regen: +${getEnergyRegenRate().toFixed(2)}/tick · Drain: ${(ENERGY_DRAIN_BASE*getEnergyDrainMult()).toFixed(2)}/tick · Max: ${maxE}`;
+    `Regen: +${getEnergyRegenRate().toFixed(2)}/tick · Drain: ${totalDrain.toFixed(2)}/tick · Max: ${maxE}`;
 
   // Happiness
   const hBar  = document.getElementById('happy-bar');
@@ -1625,6 +1869,10 @@ function renderCenter() {
   // Update the story content area on the Story tab. This replaces the old single-task card.
   renderStoryCenter();
 
+  // Render the quick actions bar which displays currently active actions, a rest toggle and
+  // an idle/clear button. This bar remains visible regardless of which center tab is active.
+  renderQuickActions();
+
   // ── Work ────────────────────────────────────────────────
   const payPerTick  = getJobPay(job);
   const workDrain   = (ENERGY_DRAIN_BASE * drainMult).toFixed(2);
@@ -1635,7 +1883,7 @@ function renderCenter() {
   const streakWarn  = G.activityStreak>HAPPY_STREAK_THRESHOLD && G.activity==='work'
     ? `<div class="act-meta" style="color:var(--rose);">⚠ Streak penalty active — take a break to restore happiness</div>` : '';
   document.getElementById('work-activities').innerHTML = `
-    <div class="activity-card ${G.activity==='work'?'active':''}" onclick="setActivity('work')">
+    <div class="activity-card ${G.activeActions.includes('work')?'active':''}" onclick="toggleAction('work')">
       <div class="act-header">
         <span class="act-name">⚒ Work — ${job.name}</span>
         <span class="act-cost">−${workDrain} ⚡/tick</span>
@@ -1644,13 +1892,14 @@ function renderCenter() {
       ${bonNote?`<div class="act-meta">Bonuses: ${bonNote}</div>`:''}
       <div class="act-meta">😊 Drains happiness (work + passive decay) · DEX ×${speedMult.toFixed(2)}</div>
       ${streakWarn}
-      <div class="act-progress"><div class="act-progress-fill" style="width:${G.activity==='work'?G.activityProgress:0}%"></div></div>
+      <div class="act-progress"><div class="act-progress-fill" style="width:${G.activeActions.includes('work')?G.activityProgress:0}%"></div></div>
     </div>`;
 
   // ── Training ────────────────────────────────────────────
   document.getElementById('train-activities').innerHTML = SKILLS.map(skill => {
     const locked = !meetsReqs(skill.req);
-    const active = G.activity === skill.id;
+    // A training action is active if it is present in the activeActions array
+    const active = G.activeActions && G.activeActions.includes(skill.id);
     const td     = (ENERGY_DRAIN_BASE * drainMult * skill.cost).toFixed(2);
     const reqTxt = locked ? Object.entries(skill.req).map(([k,v])=>`${k.toUpperCase()} ${v}`).join(', ')+' required' : '';
     const ibPct  = Math.round((getIntXpMult()-1)*100);
@@ -1658,7 +1907,7 @@ function renderCenter() {
     const xpNote = [ibPct>0?`INT +${ibPct}%`:'', eqPct>0?`Gear +${eqPct}%`:''].filter(Boolean).join(' · ');
     return `
       <div class="activity-card ${active?'active teal-act':''} ${locked?'locked-card':''}"
-           onclick="${locked?'':  `setActivity('${skill.id}')`}">
+           onclick="${locked?'':  `toggleAction('${skill.id}')`}">
         <div class="act-header">
           <span class="act-name">${skill.name}</span>
           <span class="act-cost">−${td} ⚡/tick</span>
@@ -1675,14 +1924,14 @@ function renderCenter() {
   const regen   = getEnergyRegenRate();
   const wisB    = (G.stats.wis * HAPPY_WIS_REGEN_BONUS * TICKS_PER_DAY).toFixed(1);
   document.getElementById('rest-activities').innerHTML = `
-    <div class="activity-card ${G.activity==='rest'?'active green-act':''}" onclick="setActivity('rest')">
+    <div class="activity-card ${G.activeActions.includes('rest')?'active green-act':''}" onclick="toggleAction('rest')">
       <div class="act-header">
         <span class="act-name">💤 Rest</span>
         <span class="act-cost" style="color:var(--green)">+${regen.toFixed(2)} ⚡/tick</span>
       </div>
       <div class="act-desc">Recover energy and happiness. Regen boosted by CON, housing, and happiness itself.</div>
       <div class="act-meta">😊 Restores +${HAPPY_REST_BASE} happiness/tick + housing · WIS adds +${wisB}/day passively</div>
-      <div class="act-progress"><div class="act-progress-fill green" style="width:${G.activity==='rest'?G.activityProgress:0}%"></div></div>
+      <div class="act-progress"><div class="act-progress-fill green" style="width:${G.activeActions.includes('rest')?G.activityProgress:0}%"></div></div>
     </div>`;
 }
 
@@ -1697,6 +1946,51 @@ function switchCenterTab(tab) {
     cont.classList.toggle('visible', cont.id === 'center-tab-' + tab);
   });
   if (tab === 'story') renderStoryCenter();
+}
+
+// ── Multi‑Action System ──────────────────────────────────
+// Toggle an action on or off. A maximum of two concurrent actions are
+// permitted. When toggling on a new action, ensure requirements are met.
+// If the action is already active it will be removed. Story tasks are
+// exclusive and managed via setActivity('story_task').
+function toggleAction(actionId) {
+  // Prevent toggling if a story task is active
+  if (G.activeActions.includes('story_task')) {
+    addLog('Finish the current story task before starting other actions.', true);
+    return;
+  }
+  const idx = G.activeActions.indexOf(actionId);
+  // If already selected, remove it
+  if (idx >= 0) {
+    G.activeActions.splice(idx, 1);
+    // If no actions remain, clear progress
+    if (G.activeActions.length === 0) {
+      G.activityProgress = 0;
+    }
+    renderAll();
+    return;
+  }
+  // Enforce max of 2 concurrent actions
+  if (G.activeActions.length >= 2) {
+    addLog('You can only perform two actions at a time.', false);
+    return;
+  }
+  // Validate requirements for training actions
+  if (actionId !== 'work' && actionId !== 'rest') {
+    const skill = SKILLS.find(s => s.id === actionId);
+    if (skill) {
+      if (!meetsReqs(skill.req)) {
+        const reqTxt = Object.entries(skill.req).map(([k,v])=>`${k.toUpperCase()} ${v}`).join(', ');
+        addLog(`Requires: ${reqTxt}`, false);
+        return;
+      }
+    }
+  }
+  // Add the action
+  G.activeActions.push(actionId);
+  // Reset progress when starting a new combo
+  G.activityProgress = 0;
+  renderAll();
 }
 
 // Select a story choice for the current stage. Starts the story task when chosen.
@@ -1964,6 +2258,123 @@ function renderEquipment() {
       ${actions}
     </div>`;
   }).join('');
+}
+
+// Render the Relationships tab. Each character defined in the relationshipData
+// state is displayed as a card with a placeholder portrait, name, current
+// relationship level, and a list of unlocked milestones (currently empty).
+function renderRelationships() {
+  const el = document.getElementById('relationships-list');
+  if (!el) return;
+  const chars = G.relationshipData || {};
+  const cards = Object.entries(chars).map(([id, data]) => {
+    const name = id.charAt(0).toUpperCase() + id.slice(1);
+    const lvl  = data.level || 0;
+    const max  = data.maxLevel || 0;
+    const img  = data.image ? data.image : 'placeholder_light_gray_block.png';
+    const desc = data.description || '';
+    return `
+      <div class="relationship-card">
+        <div class="rel-img" style="background-image:url('${img}');"></div>
+        <div class="rel-info">
+          <div class="rel-name">${name}</div>
+          <div class="rel-level">Level ${lvl} (Max ${max})</div>
+          <div class="rel-desc">${desc}</div>
+        </div>
+      </div>`;
+  });
+  el.innerHTML = cards.join('') || '<div class="info-box">No characters met yet.</div>';
+}
+
+// Render the persistent quick actions bar displayed at the top of the center panel. This bar
+// shows currently active actions (except rest), a dedicated Rest toggle, and an Idle button
+// to clear all actions. It also displays the total energy drain and regeneration per tick.
+function renderQuickActions() {
+  const qa = document.getElementById('quick-actions');
+  if (!qa) return;
+  // Build buttons for each currently active non-rest action
+  const buttons = [];
+  if (Array.isArray(G.activeActions)) {
+    for (const act of G.activeActions) {
+      if (act === 'rest' || act === 'story_task') continue;
+      const name = getFriendlyActionName(act);
+      buttons.push(`<button class="qa-btn active" onclick="toggleAction('${act}')">${name}</button>`);
+    }
+  }
+  // Rest button
+  const restActive = G.activeActions && G.activeActions.includes('rest');
+  buttons.push(`<button class="qa-btn qa-rest ${restActive?'active':''}" onclick="toggleAction('rest')">Rest</button>`);
+  // Idle / Clear button (resets all actions)
+  buttons.push(`<button class="qa-btn qa-clear" onclick="clearActiveActions()">Idle</button>`);
+  // Build info about energy drain/regeneration
+  const totalDrain = getTotalActionDrain();
+  const regen = getEnergyRegenRate();
+  const net = regen - totalDrain;
+  const netColor = net >= 0 ? 'green' : 'rose';
+  const meta = `<span style="font-size:11px;color:var(--text-dim);margin-left:8px;">Δ ⚡ ${net>=0?'+':''}${net.toFixed(2)}/tick</span>`;
+  qa.innerHTML = buttons.join('') + meta;
+}
+
+// Return a user-friendly label for an action id. This helps the quick actions bar display
+// readable names for work and training actions.
+function getFriendlyActionName(id) {
+  if (id === 'work') return `⚒ ${getJob().name}`;
+  const skill = SKILLS.find(s => s.id === id);
+  if (skill) return skill.name;
+  if (id === 'story_task') return 'Story';
+  return id;
+}
+
+// Clear all active actions and reset progress. Used by the Idle button in the quick actions bar.
+function clearActiveActions() {
+  G.activeActions = [];
+  G.activityProgress = 0;
+  renderAll();
+}
+
+// Begin a new loop at the academy. When a loop ends (after year 4 or upon death/expulsion),
+// the world resets but key progression persists. This function preserves core attributes
+// like stats, XP, story rewards and relationship data while resetting all other state to
+// their default values. It also sets the day and currentYear back to the start of Year 1 and
+// increments the loop count.
+function startNewLoop() {
+  // Preserve meta progression fields
+  const persistent = {
+    stats: { ...G.stats },
+    statXP: { ...G.statXP },
+    storyRewards: { ...G.storyRewards },
+    relationshipData: JSON.parse(JSON.stringify(G.relationshipData || {})),
+    prestigeCount: G.prestigeCount,
+    totalEarned: G.totalEarned,
+    loopCount: G.loopCount
+  };
+  // Create a fresh state and merge persistent values
+  const d = defaultState();
+  G = {
+    ...d,
+    ...persistent,
+    // Reset loop-specific counters
+    day: 1,
+    dayTick: 0,
+    currentYear: 1,
+    age: 18,
+    energy: getMaxEnergy(),
+    happiness: 50,
+    money: 0,
+    housingTier: 0,
+    activeActions: [],
+    storyStarted: false,
+    storyStage: 0,
+    storyTaskProgress: 0,
+    storyComplete: false,
+    selectedChoice: null,
+    storyJournal: [],
+    alignment: { paragon: 0, renegade: 0 },
+    // Maintain loop count
+    loopCount: persistent.loopCount
+  };
+  addLog('A new loop begins. Your knowledge carries over, but the world has reset.', true);
+  renderAll();
 }
 
 // ── RIGHT: PRESTIGE ───────────────────────────────────────
